@@ -342,6 +342,10 @@ export default function HomePage() {
             style={styles.cameraFull}
             facing="back"
           />
+          {/* Tooltip */}
+          <View style={styles.tooltip}>
+            <Text style={styles.tooltipText}>Make sure the trash is in frame</Text>
+          </View>
           <TouchableOpacity onPress={handleSnap} style={styles.snapButton}>
             <Ionicons name="ellipse" size={64} color="white" />
           </TouchableOpacity>
@@ -522,5 +526,19 @@ export default function HomePage() {
       backgroundColor: '#28a745',
       padding: 10,
       borderRadius: 10,
+    },
+    tooltip: {
+      position: 'absolute',
+      top: 60,
+      alignSelf: 'center',
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+      zIndex: 4,
+    },
+    tooltipText: {
+      color: 'white',
+      fontSize: 14,
     },
   });
