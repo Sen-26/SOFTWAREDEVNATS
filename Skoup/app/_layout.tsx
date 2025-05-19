@@ -13,78 +13,107 @@ import { Ionicons, MaterialIcons, Entypo } from '@expo/vector-icons';
 
 const darkMapStyle = [
     {
-        "elementType": "labels",
+        "featureType": "all",
+        "elementType": "labels.text.fill",
         "stylers": [
             {
-                "visibility": "off"
+                "color": "#ffffff"
+            }
+        ]
+    },
+    {
+        "featureType": "all",
+        "elementType": "labels.text.stroke",
+        "stylers": [
+            {
+                "color": "#000000"
             },
             {
-                "color": "#f49f53"
+                "lightness": 13
+            }
+        ]
+    },
+    {
+        "featureType": "administrative",
+        "elementType": "geometry.fill",
+        "stylers": [
+            {
+                "color": "#000000"
+            }
+        ]
+    },
+    {
+        "featureType": "administrative",
+        "elementType": "geometry.stroke",
+        "stylers": [
+            {
+                "color": "#144b53"
+            },
+            {
+                "lightness": 14
+            },
+            {
+                "weight": 1.4
             }
         ]
     },
     {
         "featureType": "landscape",
+        "elementType": "all",
         "stylers": [
             {
-                "color": "#f9ddc5"
-            },
-            {
-                "lightness": -7
+                "color": "#08304b"
             }
         ]
     },
     {
-        "featureType": "road",
+        "featureType": "poi",
+        "elementType": "geometry",
         "stylers": [
             {
-                "color": "#813033"
+                "color": "#0c4152"
             },
             {
-                "lightness": 43
+                "lightness": 5
             }
         ]
     },
     {
-        "featureType": "poi.business",
-        "stylers": [
-            {
-                "color": "#645c20"
-            },
-            {
-                "lightness": 38
-            }
-        ]
-    },
-    {
-        "featureType": "water",
-        "stylers": [
-            {
-                "color": "#1994bf"
-            },
-            {
-                "saturation": -69
-            },
-            {
-                "gamma": 0.99
-            },
-            {
-                "lightness": 43
-            }
-        ]
-    },
-    {
-        "featureType": "road.local",
+        "featureType": "road.highway",
         "elementType": "geometry.fill",
         "stylers": [
             {
-                "color": "#f19f53"
+                "color": "#000000"
+            }
+        ]
+    },
+    {
+        "featureType": "road.highway",
+        "elementType": "geometry.stroke",
+        "stylers": [
+            {
+                "color": "#0b434f"
             },
             {
-                "weight": 1.3
-            },
+                "lightness": 25
+            }
+        ]
+    },
+    {
+        "featureType": "road.arterial",
+        "elementType": "geometry.fill",
+        "stylers": [
             {
-                "visibility": "on"
+                "color": "#000000"
+            }
+        ]
+    },
+    {
+        "featureType": "road.arterial",
+        "elementType": "geometry.stroke",
+        "stylers": [
+            {
+                "color": "#0b3d51"
             },
             {
                 "lightness": 16
@@ -92,126 +121,33 @@ const darkMapStyle = [
         ]
     },
     {
-        "featureType": "poi.business"
-    },
-    {
-        "featureType": "poi.park",
+        "featureType": "road.local",
+        "elementType": "geometry",
         "stylers": [
             {
-                "color": "#645c20"
-            },
-            {
-                "lightness": 39
-            }
-        ]
-    },
-    {
-        "featureType": "poi.school",
-        "stylers": [
-            {
-                "color": "#a95521"
-            },
-            {
-                "lightness": 35
-            }
-        ]
-    },
-    {},
-    {
-        "featureType": "poi.medical",
-        "elementType": "geometry.fill",
-        "stylers": [
-            {
-                "color": "#813033"
-            },
-            {
-                "lightness": 38
-            },
-            {
-                "visibility": "off"
-            }
-        ]
-    },
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {
-        "elementType": "labels"
-    },
-    {
-        "featureType": "poi.sports_complex",
-        "stylers": [
-            {
-                "color": "#9e5916"
-            },
-            {
-                "lightness": 32
-            }
-        ]
-    },
-    {},
-    {
-        "featureType": "poi.government",
-        "stylers": [
-            {
-                "color": "#9e5916"
-            },
-            {
-                "lightness": 46
-            }
-        ]
-    },
-    {
-        "featureType": "transit.station",
-        "stylers": [
-            {
-                "visibility": "off"
-            }
-        ]
-    },
-    {
-        "featureType": "transit.line",
-        "stylers": [
-            {
-                "color": "#813033"
-            },
-            {
-                "lightness": 22
+                "color": "#000000"
             }
         ]
     },
     {
         "featureType": "transit",
+        "elementType": "all",
         "stylers": [
             {
-                "lightness": 38
+                "color": "#146474"
             }
         ]
     },
     {
-        "featureType": "road.local",
-        "elementType": "geometry.stroke",
+        "featureType": "water",
+        "elementType": "all",
         "stylers": [
             {
-                "color": "#f19f53"
-            },
-            {
-                "lightness": -10
+                "color": "#021019"
             }
         ]
-    },
-    {},
-    {},
-    {}
- ];
+    }
+];
 const lightMapStyle = [
     {
         "featureType": "all",
@@ -435,12 +371,12 @@ export default function Layout() {
       </View>
 
       {/* Dev Only: Toggle Map Style */}
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.toggleStyleButton}
         onPress={toggleStyle}
       >
         <Text style={styles.toggleText}>Toggle Style</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 }
