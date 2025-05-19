@@ -15,7 +15,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 model = YOLO("Backend/YOLO Image Detection/model.pt")
 
 @app.route("/process-image", methods=["POST"])
-def process_image():
+def process_image(): #upload image and get back annotated image
     if "file" not in request.files:
         return {"error": "No file uploaded"}, 400
     
@@ -31,7 +31,7 @@ def process_image():
     return send_file(annotated_image_path, mimetype="image/jpeg")
 
 @app.route('/timestamp', methods=['POST'])
-def detect():
+def detect(): #upload video and get back detected frame
     video_file = request.files["file"]
     with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp_file:
         video_path = tmp_file.name
