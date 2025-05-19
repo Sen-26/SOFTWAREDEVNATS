@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Image, Text } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Text,
+  ActivityIndicator,
+} from 'react-native';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { Ionicons, MaterialIcons, Entypo } from '@expo/vector-icons';
 
-const darkMapStyle = 
-
-[
+const darkMapStyle = [
     {
         "elementType": "labels",
         "stylers": [
@@ -205,85 +211,110 @@ const darkMapStyle =
     {},
     {},
     {}
-]
-
-;
-const lightMapStyle = 
-
-[
+ ];
+const lightMapStyle = [
     {
-        "elementType": "labels",
+        "featureType": "all",
+        "elementType": "labels.text.fill",
         "stylers": [
             {
-                "visibility": "off"
+                "color": "#ffffff"
+            }
+        ]
+    },
+    {
+        "featureType": "all",
+        "elementType": "labels.text.stroke",
+        "stylers": [
+            {
+                "color": "#000000"
             },
             {
-                "color": "#f49f53"
+                "lightness": 13
+            }
+        ]
+    },
+    {
+        "featureType": "administrative",
+        "elementType": "geometry.fill",
+        "stylers": [
+            {
+                "color": "#000000"
+            }
+        ]
+    },
+    {
+        "featureType": "administrative",
+        "elementType": "geometry.stroke",
+        "stylers": [
+            {
+                "color": "#144b53"
+            },
+            {
+                "lightness": 14
+            },
+            {
+                "weight": 1.4
             }
         ]
     },
     {
         "featureType": "landscape",
+        "elementType": "all",
         "stylers": [
             {
-                "color": "#f9ddc5"
-            },
-            {
-                "lightness": -7
+                "color": "#08304b"
             }
         ]
     },
     {
-        "featureType": "road",
+        "featureType": "poi",
+        "elementType": "geometry",
         "stylers": [
             {
-                "color": "#813033"
+                "color": "#0c4152"
             },
             {
-                "lightness": 43
+                "lightness": 5
             }
         ]
     },
     {
-        "featureType": "poi.business",
-        "stylers": [
-            {
-                "color": "#645c20"
-            },
-            {
-                "lightness": 38
-            }
-        ]
-    },
-    {
-        "featureType": "water",
-        "stylers": [
-            {
-                "color": "#1994bf"
-            },
-            {
-                "saturation": -69
-            },
-            {
-                "gamma": 0.99
-            },
-            {
-                "lightness": 43
-            }
-        ]
-    },
-    {
-        "featureType": "road.local",
+        "featureType": "road.highway",
         "elementType": "geometry.fill",
         "stylers": [
             {
-                "color": "#f19f53"
+                "color": "#000000"
+            }
+        ]
+    },
+    {
+        "featureType": "road.highway",
+        "elementType": "geometry.stroke",
+        "stylers": [
+            {
+                "color": "#0b434f"
             },
             {
-                "weight": 1.3
-            },
+                "lightness": 25
+            }
+        ]
+    },
+    {
+        "featureType": "road.arterial",
+        "elementType": "geometry.fill",
+        "stylers": [
             {
-                "visibility": "on"
+                "color": "#000000"
+            }
+        ]
+    },
+    {
+        "featureType": "road.arterial",
+        "elementType": "geometry.stroke",
+        "stylers": [
+            {
+                "color": "#0b3d51"
             },
             {
                 "lightness": 16
@@ -291,136 +322,64 @@ const lightMapStyle =
         ]
     },
     {
-        "featureType": "poi.business"
-    },
-    {
-        "featureType": "poi.park",
+        "featureType": "road.local",
+        "elementType": "geometry",
         "stylers": [
             {
-                "color": "#645c20"
-            },
-            {
-                "lightness": 39
-            }
-        ]
-    },
-    {
-        "featureType": "poi.school",
-        "stylers": [
-            {
-                "color": "#a95521"
-            },
-            {
-                "lightness": 35
-            }
-        ]
-    },
-    {},
-    {
-        "featureType": "poi.medical",
-        "elementType": "geometry.fill",
-        "stylers": [
-            {
-                "color": "#813033"
-            },
-            {
-                "lightness": 38
-            },
-            {
-                "visibility": "off"
-            }
-        ]
-    },
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {
-        "elementType": "labels"
-    },
-    {
-        "featureType": "poi.sports_complex",
-        "stylers": [
-            {
-                "color": "#9e5916"
-            },
-            {
-                "lightness": 32
-            }
-        ]
-    },
-    {},
-    {
-        "featureType": "poi.government",
-        "stylers": [
-            {
-                "color": "#9e5916"
-            },
-            {
-                "lightness": 46
-            }
-        ]
-    },
-    {
-        "featureType": "transit.station",
-        "stylers": [
-            {
-                "visibility": "off"
-            }
-        ]
-    },
-    {
-        "featureType": "transit.line",
-        "stylers": [
-            {
-                "color": "#813033"
-            },
-            {
-                "lightness": 22
+                "color": "#000000"
             }
         ]
     },
     {
         "featureType": "transit",
+        "elementType": "all",
         "stylers": [
             {
-                "lightness": 38
+                "color": "#146474"
             }
         ]
     },
     {
-        "featureType": "road.local",
-        "elementType": "geometry.stroke",
+        "featureType": "water",
+        "elementType": "all",
         "stylers": [
             {
-                "color": "#f19f53"
-            },
-            {
-                "lightness": -10
+                "color": "#021019"
             }
         ]
-    },
-    {},
-    {},
-    {}
-]
+    }
+];
 
-;
-
-const HomeScreen = () => {
+export default function Layout() {
+  const [region, setRegion] = useState(null);
   const [mapStyle, setMapStyle] = useState(darkMapStyle);
   const [infoVisible, setInfoVisible] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+      const loc = await Location.getCurrentPositionAsync({});
+      setRegion({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      });
+    })();
+  }, []);
 
   const toggleStyle = () => {
     setMapStyle(mapStyle === darkMapStyle ? lightMapStyle : darkMapStyle);
   };
+
+  if (!region) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color="#007bff" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -429,13 +388,8 @@ const HomeScreen = () => {
         provider={PROVIDER_GOOGLE}
         showsUserLocation
         followsUserLocation
+        region={region}
         customMapStyle={mapStyle}
-        initialRegion={{
-          latitude: 37.78825,
-          longitude: -122.4324,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }}
       />
 
       {/* Top Buttons */}
@@ -443,16 +397,22 @@ const HomeScreen = () => {
         <TouchableOpacity style={styles.menuButton}>
           <Entypo name="menu" size={28} color="white" />
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.infoButton} onPress={() => setInfoVisible(!infoVisible)}>
-          <Ionicons name="information-circle-outline" size={28} color="white" />
+        <TouchableOpacity
+          style={styles.infoButton}
+          onPress={() => setInfoVisible(!infoVisible)}
+        >
+          <Ionicons
+            name="information-circle-outline"
+            size={28}
+            color="white"
+          />
         </TouchableOpacity>
       </View>
 
       {/* Info Panel */}
       {infoVisible && (
         <View style={styles.infoPanel}>
-          <Text style={styles.infoText}>This is some expandable info...</Text>
+          <Text style={styles.infoText}>This is some expandable info…</Text>
         </View>
       )}
 
@@ -474,19 +434,23 @@ const HomeScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Optional: Toggle Map Style for Dev */}
-      <TouchableOpacity style={styles.toggleStyleButton} onPress={toggleStyle}>
+      {/* Dev Only: Toggle Map Style */}
+      <TouchableOpacity
+        style={styles.toggleStyleButton}
+        onPress={toggleStyle}
+      >
         <Text style={styles.toggleText}>Toggle Style</Text>
       </TouchableOpacity>
     </View>
   );
-};
-
-export default HomeScreen;
+}
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1 },
+  loading: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   topButtons: {
     position: 'absolute',
@@ -518,9 +482,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 5,
   },
-  infoText: {
-    fontSize: 14,
-  },
+  infoText: { fontSize: 14 },
+
   bottomButtons: {
     position: 'absolute',
     bottom: 30,
@@ -538,10 +501,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'white',
   },
-  profileImage: {
-    width: '100%',
-    height: '100%',
-  },
+  profileImage: { width: '100%', height: '100%' },
+
   addButton: {
     backgroundColor: '#007bff',
     width: 56,
@@ -556,6 +517,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
   },
+
   toggleStyleButton: {
     position: 'absolute',
     bottom: 100,
