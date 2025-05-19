@@ -12,6 +12,7 @@ import * as Location from 'expo-location';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons, MaterialIcons, Entypo } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 
 const darkMapStyle = [
@@ -289,6 +290,8 @@ const lightMapStyle = [
     }
 ];
 
+const AVATAR_KEY = '@user_avatar';
+
 export default function HomePage() {
     const router = useRouter();
   
@@ -296,6 +299,14 @@ export default function HomePage() {
     const [region, setRegion] = useState<any>(null);
     const [mapStyle, setMapStyle] = useState(darkMapStyle);
     const [infoVisible, setInfoVisible] = useState(false);
+
+    const [avatarUri, setAvatarUri] = useState<string | null>(null);
+
+    useEffect(() => {
+      AsyncStorage.getItem(AVATAR_KEY).then(uri => {
+        if (uri) setAvatarUri(uri);
+      });
+    }, []);
   
     // Camera permission + ref
     const [permission, requestPermission] = useCameraPermissions();
@@ -438,7 +449,11 @@ export default function HomePage() {
             onPress={() => router.push('/profile')}
           >
             <Image
-              source={{ uri: 'https://i.pravatar.cc/100' }}
+              source={
+                avatarUri
+                  ? { uri: avatarUri }
+                  : { uri: 'https://i.pravatar.cc/100' }
+              }
               style={styles.profileImage}
             />
           </TouchableOpacity>
@@ -540,9 +555,9 @@ export default function HomePage() {
       alignItems: 'center',
     },
     profileButton: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 68,
+      height: 68,
+      borderRadius: 100,
       overflow: 'hidden',
       borderWidth: 2,
       borderColor: 'white',
@@ -551,9 +566,9 @@ export default function HomePage() {
   
     cameraButton: {
       backgroundColor: '#007bff',
-      width: 72,
-      height: 72,
-      borderRadius: 36,
+      width: 92,
+      height: 92,
+      borderRadius: 100,
       justifyContent: 'center',
       alignItems: 'center',
       elevation: 6,
