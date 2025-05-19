@@ -12,6 +12,7 @@ import * as Location from 'expo-location';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons, MaterialIcons, Entypo } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as FileSystem from 'expo-file-system';
 
 const darkMapStyle = [
     {
@@ -149,7 +150,7 @@ const darkMapStyle = [
             }
         ]
     }
-];
+];5
 const lightMapStyle = [
     {
         "featureType": "all",
@@ -307,9 +308,44 @@ export default function HomePage() {
         const photo = await cameraRef.current.takePictureAsync();
         console.log('📷', photo.uri);
         setCameraVisible(false);
+        await uploadPhoto(photo);
       }
     };
-  
+    const [annotatedImage, setAnnotatedImage] = useState<string | null>(null);
+    const [detectionCount, setDetectionCount] = useState<number | null>(null);
+    
+    const uploadPhoto = async (photo: { uri: string }) => {
+      const formData = new FormData();
+    
+      formData.append('file', {
+        uri: photo.uri,
+        name: 'photo.jpg',
+        type: 'image/jpeg',
+      } as any);
+    
+      try {
+        const response = await fetch('http://192.168.243.10:5000/process-image', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+    
+        const json = await response.json();
+    
+        if (json.image) {
+          const base64Image = `data:image/jpeg;base64,${json.image}`;
+          setAnnotatedImage(base64Image);
+          setDetectionCount(json.count);
+          console.log(json.count)
+        } else {
+          console.error('Invalid image data from server');
+        }
+      } catch (error) {
+        console.error('❌ Upload failed:', error);
+      }
+    };
     // Fetch location
     useEffect(() => {
       (async () => {

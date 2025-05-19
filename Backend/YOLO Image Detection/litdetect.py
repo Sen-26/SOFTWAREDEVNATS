@@ -5,30 +5,39 @@ from flask import Flask, request, send_file, jsonify
 import cv2
 from flask_cors import CORS 
 import tempfile
-
+import base64
 app = Flask(__name__)
 CORS(app)
-OUTPUT_DIR="C:/Users/joshu/OneDrive/Desktop/NCSSM Projects/SoftwareEngineering/softwaredevelopment/Frontend/assets"
+OUTPUT_DIR="saved"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-model = YOLO("Backend/YOLO Image Detection/model.pt")
+model = YOLO("model.pt")
 
 @app.route("/process-image", methods=["POST"])
 def process_image(): #upload image and get back annotated image
     if "file" not in request.files:
         return {"error": "No file uploaded"}, 400
-    
+
     file = request.files["file"]
     image_path = os.path.join(OUTPUT_DIR, "uploaded_image.jpg")
-    file.save(image_path) 
+    file.save(image_path)
+
     
     results = model(image_path)
-    
+    boxes = results[0].boxes
+
     annotated_image_path = os.path.join(OUTPUT_DIR, "annotated_image.jpg")
     results[0].save(filename=annotated_image_path)
 
-    return send_file(annotated_image_path, mimetype="image/jpeg")
+    # Convert to base64 for JSON return
+    with open(annotated_image_path, "rb") as img_file:
+        b64_encoded = base64.b64encode(img_file.read()).decode("utf-8")
+
+    return jsonify({
+        "count": len(boxes),
+        "image": b64_encoded,
+    })
 
 @app.route('/timestamp', methods=['POST'])
 def detect(): #upload video and get back detected frame
