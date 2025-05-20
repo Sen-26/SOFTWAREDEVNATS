@@ -1,22 +1,19 @@
 // app/register.tsx
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
-  Keyboard,
   TouchableWithoutFeedback,
-  ActivityIndicator,
+  View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from './_layout';
-
-const USERS_KEY = '@registered_users';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -38,21 +35,37 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      const stored = await AsyncStorage.getItem(USERS_KEY);
-      const users = stored 
-        ? (JSON.parse(stored) as { username: string; password: string }[]) 
-        : [];
-
-      if (users.some(u => u.username === username)) {
-        Alert.alert('Already Registered', 'This username is already in use.');
+      // Call backend API for registration
+      const response = await fetch('http://192.168.193.45:5431/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        Alert.alert('Registration Failed', error?.message || 'Could not register.');
         setLoading(false);
         return;
       }
-
-      const newUsers = [...users, { username, password }];
-      await AsyncStorage.setItem(USERS_KEY, JSON.stringify(newUsers));
-
-      login(username);
+      // Optionally, auto-login after registration
+      const data = await response.json();
+      if (!data.token) {
+        // If registration succeeded but no token, try logging in
+        const loginResp = await fetch('http://192.168.193.45:5431/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        if (!loginResp.ok) {
+          Alert.alert('Registration Succeeded', 'But could not log in automatically. Please log in manually.');
+          setLoading(false);
+          return;
+        }
+        const loginData = await loginResp.json();
+        await login(loginData.token);
+      } else {
+        await login(data.token);
+      }
       router.replace('/');
     } catch (err) {
       console.error('Registration error:', err);

@@ -1,23 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Text,
-  ActivityIndicator,
-  Animated,
-  Alert,
-  Switch,
-} from 'react-native';
-import MapView, { PROVIDER_GOOGLE, Overlay } from 'react-native-maps';
-import * as Location from 'expo-location';
-import Slider from '@react-native-community/slider';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Ionicons, MaterialIcons, Entypo } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Entypo, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import WebView from 'react-native-webview';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as Location from 'expo-location';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import { useAuth } from './_layout';
+
+const apiURL = "http://192.168.193.45:5431/";
 
 const darkMapStyle = [
     {
@@ -301,6 +301,7 @@ const userName = 'Pranav';
 
 export default function HomePage() {
     const router = useRouter();
+    const { token } = useAuth();
   
     // Map state
     const [region, setRegion] = useState<any>(null);
@@ -386,11 +387,12 @@ export default function HomePage() {
       } as any);
 
       try {
-        const response = await fetch('http://192.168.203.253:5000/process-image', {
+        const response = await fetch("http://192.168.193.45:5431/detection/process-image", {
           method: 'POST',
           body: formData,
           headers: {
             'Content-Type': 'multipart/form-data',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
         });
 

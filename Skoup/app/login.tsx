@@ -1,19 +1,18 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
   Keyboard,
-  TouchableWithoutFeedback,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter, Link } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from './_layout'; 
+import { useAuth } from './_layout';
 
 const TOKEN_KEY = '@auth_token';
 
@@ -29,21 +28,27 @@ export default function LoginPage() {
       Alert.alert('Missing Fields', 'Please enter both email and password.');
       return;
     }
-    setLoading(true);
     try {
-      // TODO: replace with real authentication API
-      if (email === 'pranav' && password === 'aaditya') {
-        login('dummy-token');
-        router.replace('/');
-      } else {
-        Alert.alert('Login Failed', 'Invalid email or password.');
-      }
-    } catch (err) {
-      console.error('Login error:', err);
-      Alert.alert('Error', 'An error occurred during login.');
-    } finally {
+    // Replace with your backend API call
+    const response = await fetch('http://192.168.193.45:5431/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: email, password }),
+    });
+    if (!response.ok) {
+      Alert.alert('Login Failed', 'Invalid email or password.');
       setLoading(false);
+      return;
     }
+    const { token, expiresAt } = await response.json();
+    await login(token); // Save token in context and AsyncStorage
+    router.replace('/');
+  } catch (err) {
+    console.log(err);
+    Alert.alert('Error', 'An error occurred during login.');
+  } finally {
+    setLoading(false);
+  }
   };
 
   return (
