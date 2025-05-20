@@ -9,23 +9,33 @@ import {
   Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Entypo } from '@expo/vector-icons';
+import { useRouter, useFocusEffect } from 'expo-router';
 
 const AVATAR_KEY = '@user_avatar';
+const COIN_KEY = '@user_coins';
 const { width } = Dimensions.get('window');
 
 export default function Profile() {
   const router = useRouter();
 
+  const [menuVisible, setMenuVisible] = useState(false);
+  const toggleMenu = () => setMenuVisible(v => !v);
+
   // Avatar URI state
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
+
+  const [coins, setCoins] = useState<number>(0);
 
   // Reload avatar whenever screen is focused
   useFocusEffect(
     React.useCallback(() => {
       AsyncStorage.getItem(AVATAR_KEY).then(uri => {
         if (uri) setAvatarUri(uri);
+      });
+      AsyncStorage.getItem(COIN_KEY).then(value => {
+        if (value) setCoins(parseInt(value, 10));
       });
     }, [])
   );
@@ -43,6 +53,45 @@ export default function Profile() {
 
   return (
     <View style={styles.container}>
+      {/* Hamburger Menu */}
+      <TouchableOpacity
+        style={styles.menuButton}
+        onPress={toggleMenu}
+      >
+        <Entypo name="menu" size={28} color="#333" />
+      </TouchableOpacity>
+      {menuVisible && (
+        <View style={styles.dropdownMenu}>
+          <TouchableOpacity
+            style={styles.dropdownItem}
+            onPress={() => { toggleMenu(); router.push('/'); }}
+          >
+            <Ionicons name="home-outline" size={20} color="#333" style={styles.dropdownIcon} />
+            <Text style={styles.dropdownText}>Home</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dropdownItem}
+            onPress={() => { toggleMenu(); router.push('/profile'); }}
+          >
+            <Ionicons name="person-outline" size={20} color="#333" style={styles.dropdownIcon} />
+            <Text style={styles.dropdownText}>Profile</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dropdownItem}
+            onPress={() => { toggleMenu(); router.push('/shop'); }}
+          >
+            <Ionicons name="storefront-outline" size={20} color="#333" style={styles.dropdownIcon} />
+            <Text style={styles.dropdownText}>Shop</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dropdownItem}
+            onPress={() => { toggleMenu(); /* add settings route if exists */ }}
+          >
+            <Ionicons name="settings-outline" size={20} color="#333" style={styles.dropdownIcon} />
+            <Text style={styles.dropdownText}>Settings</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       {/* Tabs */}
       <View style={styles.tabContainer}>
         {(['Me', 'Friends'] as const).map(tab => (
@@ -72,7 +121,7 @@ export default function Profile() {
               <Text style={styles.profileTag}>{tag}</Text>
             </View>
             <View style={styles.coinContainer}>
-              <Text style={styles.coinText}>💰 1,234</Text>
+              <Text style={styles.coinText}>💰 {coins}</Text>
             </View>
           </View>
 
@@ -121,6 +170,15 @@ export default function Profile() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF', paddingHorizontal: 20, paddingTop: 40, paddingBottom: 20 },
+  menuButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    padding: 8,
+    borderRadius: 20,
+    zIndex: 10,
+  },
   tabContainer: {
     flexDirection: 'row',
     borderBottomWidth: 1,
@@ -239,5 +297,38 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 5,
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 80,
+    left: 20,
+    width: 180,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingVertical: 8,
+    // iOS shadow
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    // Android
+    elevation: 5,
+    zIndex: 10,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+  },
+  dropdownIcon: {
+    marginRight: 12,
+  },
+  dropdownText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

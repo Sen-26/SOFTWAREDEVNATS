@@ -1,0 +1,9 @@
+Flask
+Flask-Cors
+Flask-SQLAlchemy
+psycopg2-binary
+PyJWT
+ultralytics
+opencv-python
+Werkzeug
+dotenv

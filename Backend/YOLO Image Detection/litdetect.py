@@ -3,6 +3,7 @@ from ultralytics import YOLO
 import os
 from flask import Flask, request, send_file, jsonify
 import cv2
+import numpy as np
 from flask_cors import CORS 
 import tempfile
 import base64
@@ -24,13 +25,19 @@ def process_image(): #upload image and get back annotated image
     file.save(image_path)
 
     
-    results = model(image_path)
+    results = model.predict(task="detect", source=image_path, max_det=1000, show_labels=False, show_conf=False)
     boxes = results[0].boxes
 
-    annotated_image_path = os.path.join(OUTPUT_DIR, "annotated_image.jpg")
-    results[0].save(filename=annotated_image_path)
+    img = cv2.imread(image_path)
 
-    # Convert to base64 for JSON return
+    for box in boxes:
+        x1, y1, x2, y2 = box.xyxy[0].int().tolist()
+        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 6)
+
+
+    annotated_image_path = os.path.join(OUTPUT_DIR, "annotated_image.jpg")
+    cv2.imwrite(annotated_image_path, img)
+
     with open(annotated_image_path, "rb") as img_file:
         b64_encoded = base64.b64encode(img_file.read()).decode("utf-8")
 
