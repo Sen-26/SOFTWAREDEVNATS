@@ -291,6 +291,7 @@ const lightMapStyle = [
 ];
 
 const AVATAR_KEY = '@user_avatar';
+const userName = 'Pranav';
 
 export default function HomePage() {
     const router = useRouter();
@@ -335,7 +336,7 @@ export default function HomePage() {
       } as any);
     
       try {
-        const response = await fetch('http://192.168.243.10:5000/process-image', {
+        const response = await fetch('http://192.168.203.253:5000/process-image', {
           method: 'POST',
           body: formData,
           headers: {
@@ -456,8 +457,12 @@ export default function HomePage() {
               }
               style={styles.profileImage}
             />
+            {/* Username overlay */}
+            <View style={styles.profileNameOverlay}>
+              <Text style={styles.profileNameOverlayText}>{userName}</Text>
+            </View>
           </TouchableOpacity>
-  
+
           <TouchableOpacity
             style={styles.cameraButton}
             onPress={() => {
@@ -465,9 +470,9 @@ export default function HomePage() {
               else setCameraVisible(true);
             }}
           >
-            <Ionicons name="camera" size={36} color="white" />
+            <Ionicons name="camera" size={48} color="white" />
           </TouchableOpacity>
-  
+
           <TouchableOpacity
             style={styles.shopButton}
             onPress={() => router.push('/shop')}
@@ -548,35 +553,41 @@ export default function HomePage() {
     bottomButtons: {
       position: 'absolute',
       bottom: 30,
-      left: 20,
-      right: 20,
+      left: 10,
+      right: 30,
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
     },
     profileButton: {
-      width: 68,
-      height: 68,
-      borderRadius: 100,
-      overflow: 'hidden',
+      width: 72,
+      height: 72,
+      borderRadius: 36,
       borderWidth: 2,
       borderColor: 'white',
     },
-    profileImage: { width: '100%', height: '100%' },
+    profileImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 36,
+    },
   
     cameraButton: {
       backgroundColor: '#007bff',
-      width: 92,
-      height: 92,
-      borderRadius: 100,
+      width: 112,
+      height: 112,
+      borderRadius: 56,
       justifyContent: 'center',
       alignItems: 'center',
       elevation: 6,
     },
     shopButton: {
       backgroundColor: '#28a745',
-      padding: 10,
+      width: 52,
+      height: 52,
       borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     tooltip: {
       position: 'absolute',
@@ -591,5 +602,25 @@ export default function HomePage() {
     tooltipText: {
       color: 'white',
       fontSize: 14,
+    },
+    profileNameOverlay: {
+      position: 'absolute',
+      bottom: -15,
+      right: -24,
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      borderWidth: 1,
+      borderColor: 'white',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 14,
+      zIndex: 4,
+    },
+    profileNameOverlayText: {
+      color: 'white',
+      fontSize: 14,
+      fontWeight: 'bold',
+      textShadowColor: 'rgba(0, 0, 0, 0.75)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
     },
   });
