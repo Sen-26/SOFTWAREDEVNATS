@@ -8,14 +8,16 @@ import {
   ActivityIndicator,
   Animated,
   Alert,
+  Switch,
 } from 'react-native';
-import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { PROVIDER_GOOGLE, Overlay } from 'react-native-maps';
 import * as Location from 'expo-location';
+import Slider from '@react-native-community/slider';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons, MaterialIcons, Entypo } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+import WebView from 'react-native-webview';
 
 const darkMapStyle = [
     {
@@ -294,6 +296,7 @@ const lightMapStyle = [
 
 const AVATAR_KEY = '@user_avatar';
 const COIN_KEY = '@user_coins';
+const EPA_MAP_VISIBLE = '@epa_map_visible';
 const userName = 'Pranav';
 
 export default function HomePage() {
@@ -305,14 +308,23 @@ export default function HomePage() {
     const [infoVisible, setInfoVisible] = useState(false);
     const slideAnim = useRef(new Animated.Value(-120)).current;
 
+    // EPA Map Overlay State
+    const [epaMapVisible, setEpaMapVisible] = useState(false);
+    const [epaMapOpacity, setEpaMapOpacity] = useState(0.7);
+    
     const [avatarUri, setAvatarUri] = useState<string | null>(null);
 
     useEffect(() => {
       AsyncStorage.getItem(AVATAR_KEY).then(uri => {
         if (uri) setAvatarUri(uri);
       });
+      AsyncStorage.getItem(EPA_MAP_VISIBLE).then(value => {
+        if (value !== null) setEpaMapVisible(value === 'true');
+      });
     }, []);
-  
+    useEffect(() => {
+      AsyncStorage.setItem(EPA_MAP_VISIBLE, epaMapVisible.toString());
+    }, [epaMapVisible]);
     // Camera permission + ref
     const [permission, requestPermission] = useCameraPermissions();
     const cameraRef = useRef<CameraView>(null);
@@ -361,7 +373,9 @@ export default function HomePage() {
     const toggleMenu = () => {
       setMenuVisible(v => !v);
     };
-
+    const toggleEpaMap = () => {
+      setEpaMapVisible(prev => !prev);
+    };
     const uploadPhoto = async (photo: { uri: string }) => {
       const formData = new FormData();
 
@@ -484,7 +498,23 @@ export default function HomePage() {
           followsUserLocation
           region={region}
           customMapStyle={mapStyle}
-        />
+        >
+          {epaMapVisible && (
+            <Overlay 
+              bounds={[
+                [24.396308, -125.0],  // Southwest coordinate [latitude, longitude]
+                [49.384358, -66.93457]   // Northeast coordinate [latitude, longitude]
+              ]}
+              image={{
+                uri: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/US_TrashIndex_BoundedCombined_v1/MapServer/export?dpi=96&transparent=true&format=png32&layers=show:0&bbox=' + 
+                     `${region.longitude - region.longitudeDelta},${region.latitude - region.latitudeDelta},` +
+                     `${region.longitude + region.longitudeDelta},${region.latitude + region.latitudeDelta}` +
+                     '&bboxSR=4326&imageSR=4326&size=512,512&f=image'
+              }}
+              opacity={epaMapOpacity}
+            />
+          )}
+        </MapView>
   
         {/* Top Buttons */}
         {!cameraVisible && (
@@ -520,7 +550,7 @@ export default function HomePage() {
             { transform: [{ translateY: slideAnim }] },
           ]}
         >
-          <Text style={styles.infoText}>This is some expandable info…</Text>
+          <Text style={styles.infoText}>This map shows areas with high risk of trash pollution. Toggle the EPA data layer to see high-risk areas.</Text>
         </Animated.View>
 
         {/* Dropdown Menu */}
@@ -542,6 +572,36 @@ export default function HomePage() {
               <Ionicons name="settings-outline" size={20} color="#333" style={styles.dropdownIcon} />
               <Text style={styles.dropdownText}>Settings</Text>
             </TouchableOpacity>
+            
+            {/* EPA Map Layer Toggle */}
+            <View style={[styles.dropdownItem, styles.toggleItem]}>
+              <Ionicons name="layers-outline" size={20} color="#333" style={styles.dropdownIcon} />
+              <Text style={styles.dropdownText}>EPA Trash Risk</Text>
+              <Switch
+                value={epaMapVisible}
+                onValueChange={toggleEpaMap}
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                thumbColor={epaMapVisible ? "#007bff" : "#f4f3f4"}
+                style={styles.toggle}
+              />
+            </View>
+            
+            {/* Opacity Slider (only show when EPA map is visible) */}
+            {epaMapVisible && (
+              <View style={[styles.dropdownItem, styles.sliderItem]}>
+                <Text style={styles.sliderLabel}>Opacity: {Math.round(epaMapOpacity * 100)}%</Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={0.2}
+                  maximumValue={1}
+                  value={epaMapOpacity}
+                  onValueChange={setEpaMapOpacity}
+                  minimumTrackTintColor="#007bff"
+                  maximumTrackTintColor="#d3d3d3"
+                  thumbTintColor="#007bff"
+                />
+              </View>
+            )}
           </View>
         )}
   
@@ -582,6 +642,27 @@ export default function HomePage() {
             <MaterialIcons name="store" size={24} color="white" />
           </TouchableOpacity>
         </View>
+
+        {/* EPA Map Legend (only show when EPA map is visible) */}
+        {epaMapVisible && (
+          <View style={styles.mapLegend}>
+            <Text style={styles.legendTitle}>EPA Trash Risk</Text>
+            <View style={styles.legendItems}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendColor, {backgroundColor: 'rgba(255, 0, 0, 0.7)'}]} />
+                <Text style={styles.legendText}>High Risk</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendColor, {backgroundColor: 'rgba(255, 165, 0, 0.7)'}]} />
+                <Text style={styles.legendText}>Medium Risk</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendColor, {backgroundColor: 'rgba(255, 255, 0, 0.7)'}]} />
+                <Text style={styles.legendText}>Low Risk</Text>
+              </View>
+            </View>
+          </View>
+        )}
       </View>
     );
   }
@@ -841,5 +922,64 @@ export default function HomePage() {
       justifyContent: 'center',
       alignItems: 'center',
     },
+    toggleItem: {
+      justifyContent: 'space-between',
+    },
+    sliderItem: {
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      paddingTop: 8,
+      paddingBottom: 12,
+    },
+    sliderLabel: {
+      fontSize: 14,
+      color: '#666',
+      marginBottom: 8,
+    },
+    slider: {
+      width: '100%',
+      height: 40,
+    },
+
+
+    toggle: {
+      marginLeft: 8,
+    },
+    
+    // Map Legend
+    mapLegend: {
+      position: 'absolute',
+      right: 20,
+      bottom: 160,
+      backgroundColor: 'white',
+      padding: 12,
+      borderRadius: 10,
+      shadowColor: '#000',
+      shadowOpacity: 0.3,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 5,
+    },
+    legendTitle: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    legendItems: {
+      flexDirection: 'column',
+      gap: 8,
+    },
+    legendItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    legendColor: {
+      width: 16,
+      height: 16,
+      marginRight: 8,
+    },
+    legendText: {
+      fontSize: 12,
+    },   
 
 });
