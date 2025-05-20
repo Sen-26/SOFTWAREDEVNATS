@@ -6,6 +6,8 @@ import {
   Image,
   Text,
   ActivityIndicator,
+  Animated,
+  Alert,
 } from 'react-native';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -291,6 +293,7 @@ const lightMapStyle = [
 ];
 
 const AVATAR_KEY = '@user_avatar';
+const COIN_KEY = '@user_coins';
 const userName = 'Pranav';
 
 export default function HomePage() {
@@ -300,6 +303,7 @@ export default function HomePage() {
     const [region, setRegion] = useState<any>(null);
     const [mapStyle, setMapStyle] = useState(darkMapStyle);
     const [infoVisible, setInfoVisible] = useState(false);
+    const slideAnim = useRef(new Animated.Value(-120)).current;
 
     const [avatarUri, setAvatarUri] = useState<string | null>(null);
 
@@ -315,26 +319,58 @@ export default function HomePage() {
   
     // NEW: toggle camera view
     const [cameraVisible, setCameraVisible] = useState(false);
+
+    // Result modal state
+    const [showResults, setShowResults] = useState(false);
+    const [tokensEarned, setTokensEarned] = useState<number>(0);
+
     const handleSnap = async () => {
-      if (cameraRef.current) {
-        const photo = await cameraRef.current.takePictureAsync();
-        console.log('📷', photo.uri);
-        setCameraVisible(false);
-        await uploadPhoto(photo);
+      if (!cameraRef.current) return;
+      const photo = await cameraRef.current.takePictureAsync();
+      setCameraVisible(false);
+
+      try {
+        const { image, count } = await uploadPhoto(photo);
+        setAnnotatedImage(image);
+        setDetectionCount(count);
+        if (count === 0) {
+          Alert.alert(
+            'No trash detected',
+            'Please make sure the trash is clearly visible and try again.'
+          );
+          setCameraVisible(true);
+          return;
+        }
+        // compute tokens based on returned count
+        const current = parseInt((await AsyncStorage.getItem(COIN_KEY)) || '0', 10);
+        const tokens = count * 2;
+        const updated = current + tokens;
+        await AsyncStorage.setItem(COIN_KEY, updated.toString());
+        setTokensEarned(tokens);
+      } catch (err) {
+        console.error('Upload or processing failed', err);
       }
+
+      setShowResults(true);
     };
     const [annotatedImage, setAnnotatedImage] = useState<string | null>(null);
     const [detectionCount, setDetectionCount] = useState<number | null>(null);
-    
+
+    // Dropdown menu hooks
+    const [menuVisible, setMenuVisible] = useState(false);
+    const toggleMenu = () => {
+      setMenuVisible(v => !v);
+    };
+
     const uploadPhoto = async (photo: { uri: string }) => {
       const formData = new FormData();
-    
+
       formData.append('file', {
         uri: photo.uri,
         name: 'photo.jpg',
         type: 'image/jpeg',
       } as any);
-    
+
       try {
         const response = await fetch('http://192.168.203.253:5000/process-image', {
           method: 'POST',
@@ -343,19 +379,17 @@ export default function HomePage() {
             'Content-Type': 'multipart/form-data',
           },
         });
-    
+
         const json = await response.json();
-    
+
         if (json.image) {
           const base64Image = `data:image/jpeg;base64,${json.image}`;
-          setAnnotatedImage(base64Image);
-          setDetectionCount(json.count);
-          console.log(json.count)
-        } else {
-          console.error('Invalid image data from server');
+          return { image: base64Image, count: json.count };
         }
+        throw new Error('Invalid response from server');
       } catch (error) {
         console.error('❌ Upload failed:', error);
+        throw error;
       }
     };
     // Fetch location
@@ -372,6 +406,37 @@ export default function HomePage() {
         });
       })();
     }, []);
+
+    // Show scan results
+    if (showResults) {
+      return (
+        <View style={styles.resultsContainer}>
+          <View style={styles.resultsCard}>
+            {annotatedImage && (
+              <Image source={{ uri: annotatedImage }} style={styles.resultImage} />
+            )}
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Ionicons name="trash-outline" size={28} color="#007bff" />
+                <Text style={styles.statNumber}>{detectionCount}</Text>
+                <Text style={styles.statLabel}>Items</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Ionicons name="sparkles-outline" size={28} color="#007bff" />
+                <Text style={styles.statNumber}>{tokensEarned}</Text>
+                <Text style={styles.statLabel}>Tokens</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.resultButton}
+              onPress={() => setShowResults(false)}
+            >
+              <Text style={styles.resultButtonText}>Back to Map</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
   
     if (!region) {
       return (
@@ -406,6 +471,8 @@ export default function HomePage() {
         </View>
       );
     }
+
+    // (sidebarWidth, menuVisible, menuAnim, toggleMenu moved above)
   
     // MAIN MAP + UI
     return (
@@ -420,13 +487,22 @@ export default function HomePage() {
         />
   
         {/* Top Buttons */}
+        {!cameraVisible && (
         <View style={styles.topButtons}>
-          <TouchableOpacity style={styles.menuButton}>
+          <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
             <Entypo name="menu" size={28} color="white" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.infoButton}
-            onPress={() => setInfoVisible(v => !v)}
+            onPress={() => {
+              const toValue = infoVisible ? -120 : 0;
+              Animated.timing(slideAnim, {
+                toValue,
+                duration: 300,
+                useNativeDriver: true,
+              }).start();
+              setInfoVisible(v => !v);
+            }}
           >
             <Ionicons
               name="information-circle-outline"
@@ -435,11 +511,37 @@ export default function HomePage() {
             />
           </TouchableOpacity>
         </View>
-  
+        )}
+
         {/* Info Panel */}
-        {infoVisible && (
-          <View style={styles.infoPanel}>
-            <Text style={styles.infoText}>This is some expandable info…</Text>
+        <Animated.View
+          style={[
+            styles.infoPanel,
+            { transform: [{ translateY: slideAnim }] },
+          ]}
+        >
+          <Text style={styles.infoText}>This is some expandable info…</Text>
+        </Animated.View>
+
+        {/* Dropdown Menu */}
+        {menuVisible && (
+          <View style={styles.dropdownMenu}>
+            <TouchableOpacity onPress={() => { toggleMenu(); router.push('/'); }} style={styles.dropdownItem}>
+              <Ionicons name="home-outline" size={20} color="#333" style={styles.dropdownIcon} />
+              <Text style={styles.dropdownText}>Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { toggleMenu(); router.push('/profile'); }} style={styles.dropdownItem}>
+              <Ionicons name="person-outline" size={20} color="#333" style={styles.dropdownIcon} />
+              <Text style={styles.dropdownText}>Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { toggleMenu(); router.push('/shop'); }} style={styles.dropdownItem}>
+              <Ionicons name="storefront-outline" size={20} color="#333" style={styles.dropdownIcon} />
+              <Text style={styles.dropdownText}>Shop</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { toggleMenu(); /* add settings route if exists */ }} style={styles.dropdownItem}>
+              <Ionicons name="settings-outline" size={20} color="#333" style={styles.dropdownIcon} />
+              <Text style={styles.dropdownText}>Settings</Text>
+            </TouchableOpacity>
           </View>
         )}
   
@@ -623,4 +725,121 @@ export default function HomePage() {
       textShadowOffset: { width: 0, height: 1 },
       textShadowRadius: 2,
     },
-  });
+    dropdownMenu: {
+      position: 'absolute',
+      top: 80,
+      left: 20,
+      width: 150,
+      backgroundColor: '#fff',
+      // iOS shadow
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 8,
+      // Android elevation
+      elevation: 5,
+      borderRadius: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 10,
+      zIndex: 10,
+      // height removed to auto-size
+    },
+    dropdownItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: '#EEE',
+    },
+    dropdownIcon: {
+      marginRight: 12,
+    },
+    dropdownText: {
+      fontSize: 18,
+      color: '#333',
+      fontWeight: '600',
+    },
+
+
+
+  
+    resultsContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#E5E9F0',  
+      padding: 16,
+    },
+    resultImage: {
+      width: '100%',
+      height: 260,
+      resizeMode: 'cover',
+      borderRadius: 12,
+      marginBottom: 16,
+    },
+    // Card for scan results
+    resultsCard: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: 16,
+      padding: 24,
+      marginHorizontal: 16,
+      shadowColor: '#000',
+      shadowOpacity: 0.05,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 12,
+      elevation: 6,
+      width: '100%',
+      maxWidth: 420,
+      alignItems: 'center',
+    },
+    statsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      width: '100%',
+      marginVertical: 24,
+    },
+    statBox: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: 12,
+      marginHorizontal: 8,
+      backgroundColor: '#F3F4F6',
+      borderRadius: 12,
+    },
+    statNumber: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: '#1F2937',
+      marginTop: 6,
+    },
+    statLabel: {
+      fontSize: 14,
+      color: '#6B7280',
+      marginTop: 4,
+    },
+    resultButton: {
+      backgroundColor: '#2563EB',
+      paddingVertical: 14,
+      paddingHorizontal: 36,
+      borderRadius: 12,
+      marginTop: 8,
+    },
+    resultButtonText: {
+      color: '#FFFFFF',
+      fontSize: 18,
+      fontWeight: '700',
+    },
+    imageWrapper: {
+      width: '100%',
+      height: 260,
+      borderRadius: 12,
+      overflow: 'hidden',
+      marginBottom: 24,
+      borderWidth: 1,
+      borderColor: '#DDD',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+
+});
