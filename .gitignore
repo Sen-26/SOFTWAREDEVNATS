@@ -1,2 +1,4 @@
 .venv
 .env
+.saved
+.__pycache__
