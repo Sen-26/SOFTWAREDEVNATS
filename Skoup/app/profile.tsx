@@ -8,11 +8,17 @@ import {
   Image,
   StyleSheet,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Entypo } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useAuth } from './_layout';
+import { Buffer } from 'buffer';
+
+const API_BASE = 'http://192.168.193.45:5431'; // Update with your server address
+
 import { LineChart } from 'react-native-chart-kit';
 
 const AVATAR_KEY = '@user_avatar';
@@ -25,32 +31,47 @@ export default function Profile() {
   const [menuVisible, setMenuVisible] = useState(false);
   const toggleMenu = () => setMenuVisible(v => !v);
 
-  // Avatar URI state
-  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  // User profile state
+  const { token } = useAuth();
+  const [avatarUri, setAvatarUri] = useState<string>('');
+  const [profileName, setProfileName] = useState<string>('');
 
   const [coins, setCoins] = useState<number>(0);
 
-  // Replace static state with dynamic history state
   const [dailyCounts, setDailyCounts] = useState<number[]>([]);
   const [weeklyCounts, setWeeklyCounts] = useState<number[]>([]);
   const [monthlyCounts, setMonthlyCounts] = useState<number[]>([]);
 
-  // Reload avatar and histories whenever screen is focused
   useFocusEffect(
     React.useCallback(() => {
-      AsyncStorage.getItem(AVATAR_KEY).then(uri => {
-        if (uri) setAvatarUri(uri);
-      });
+      fetch(`${API_BASE}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(res => res.json())
+        .then(data => {
+          const endpoint = `${API_BASE}/users/${data.id}/avatar?t=${Date.now()}`;
+          // Fetch raw image bytes and convert to base64 data URI
+          fetch(endpoint, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+            .then(res => res.arrayBuffer())
+            .then(buffer => {
+              const b64 = Buffer.from(buffer).toString('base64');
+              setAvatarUri(`data:image/png;base64,${b64}`);
+            })
+            .catch(console.error);
+          if (data.username) setProfileName(data.username);
+        })
+        .catch(console.error);
       AsyncStorage.getItem(COIN_KEY).then(value => {
         if (value) setCoins(parseInt(value, 10));
       });
       AsyncStorage.getItem('@daily_history').then(v => setDailyCounts(v ? JSON.parse(v) : []));
       AsyncStorage.getItem('@weekly_history').then(v => setWeeklyCounts(v ? JSON.parse(v) : []));
       AsyncStorage.getItem('@monthly_history').then(v => setMonthlyCounts(v ? JSON.parse(v) : []));
-    }, [])
+    }, [token])
   );
 
-  // Tab state and random tag
   const [selectedTab, setSelectedTab] = useState<'Me' | 'Friends'>('Me');
   const [tag, setTag] = useState<string>('');
   useEffect(() => {
@@ -61,7 +82,6 @@ export default function Profile() {
     setTag('#' + randomTag);
   }, []);
 
-  // Impact calculation constants and state
   const PIECE_WEIGHT_KG = 0.05;
   const CO2_PER_KG = 2.5;
   const WATER_PER_KG = 10;
@@ -142,7 +162,7 @@ export default function Profile() {
             {/* Header */}
             <View style={styles.header}>
               <View>
-                <Text style={styles.profileName}>Pranav Kumar</Text>
+                <Text style={styles.profileName}>{profileName}</Text>
                 <Text style={styles.profileTag}>{tag}</Text>
               </View>
               <View style={styles.coinContainer}>
@@ -155,6 +175,9 @@ export default function Profile() {
               style={styles.avatarWrapper}
               onPress={() => router.push('/edit-avatar')}
             >
+              { !avatarUri && (
+                <ActivityIndicator size="large" color="#007bff" style={styles.avatarLoader} />
+              ) }
               {avatarUri ? (
                 <Image source={{ uri: avatarUri }} style={styles.avatar} />
               ) : (
@@ -321,6 +344,12 @@ const styles = StyleSheet.create({
   avatarWrapper: {
     alignSelf: 'center',
     marginBottom: 20,
+  },
+  avatarLoader: {
+    position: 'absolute',
+    top: '45%',
+    left: '45%',
+    zIndex: 1,
   },
   avatar: {
     width: 220,

@@ -12,8 +12,10 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import * as FileSystem from 'expo-file-system';
+// import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from './_layout';
+const API_BASE = 'http://192.168.193.45:5431';
 
 const AVATAR_KEY = '@user_avatar';
 
@@ -21,6 +23,7 @@ export default function EditAvatarScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [previewUri, setPreviewUri] = useState(null);
+  const { token } = useAuth();
 
   useEffect(() => {
     AsyncStorage.getItem(AVATAR_KEY).then(uri => {
@@ -83,31 +86,40 @@ export default function EditAvatarScreen() {
   };
 
   const saveAvatar = async () => {
-    setLoading(true);
+    console.log('Uploading to:', `${API_BASE}/users/me/avatar`);
+    console.log('File URI:', previewUri);
     if (!previewUri) {
       Alert.alert('No Image', 'Pick or take a photo first.');
-      setLoading(false);
       return;
     }
-
-    // Prepare destination path
-    const fileName = previewUri.split('/').pop();
-    const dest = FileSystem.documentDirectory + fileName;
-
-    // Try to copy into permanent storage, ignore all errors
+    setLoading(true);
+    const formData = new FormData();
+    formData.append('file', {
+      uri: previewUri,
+      name: 'avatar.jpg',
+      type: 'image/jpeg',
+    });
     try {
-      const fileInfo = await FileSystem.getInfoAsync(dest);
-      if (fileInfo.exists) {
-        await FileSystem.deleteAsync(dest, { idempotent: true });
+      const response = await fetch(`${API_BASE}/users/me/avatar`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+        body: formData,
+      });
+      console.log('Response status:', response.status);
+      const json = await response.json();
+      if (json.avatar_url) {
+        await AsyncStorage.setItem(AVATAR_KEY, json.avatar_url);
       }
-      await FileSystem.copyAsync({ from: previewUri, to: dest });
-      await AsyncStorage.setItem(AVATAR_KEY, dest);
-    } catch {
-      // intentionally ignore any save errors
+      router.back();
+    } catch (err) {
+      console.error('Upload failed', err);
+      Alert.alert('Error', 'Could not upload avatar.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-    router.back();
   };
 
   return (
