@@ -7,3 +7,4 @@ ultralytics
 opencv-python
 Werkzeug
 dotenv
+numpy
