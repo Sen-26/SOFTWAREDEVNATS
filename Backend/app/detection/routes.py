@@ -3,6 +3,7 @@ import os
 import tempfile
 import cv2
 import base64
+import numpy as np
 from ultralytics import YOLO
 from app.auth.routes import token_required
 
@@ -20,11 +21,17 @@ def process_image(current_user):
     file = request.files["file"]
     image_path = os.path.join(OUTPUT_DIR, "uploaded_image.jpg")
     file.save(image_path)
-    results = model(image_path)
+    results = model.predict(task='detect', source=image_path, max_det=1000, show_labels=False, show_conf=False)
     boxes = results[0].boxes
 
+    img = cv2.imread(image_path)
+
+    for box in boxes:
+        x1, y1, x2, y2 = box.xyxy[0].int().tolist()
+        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 6)
+
     annotated_image_path = os.path.join(OUTPUT_DIR, "annotated_image.jpg")
-    results[0].save(filename=annotated_image_path)
+    cv2.imwrite(annotated_image_path, img)
 
     with open(annotated_image_path, "rb") as img_file:
         b64_encoded = base64.b64encode(img_file.read()).decode("utf-8")
