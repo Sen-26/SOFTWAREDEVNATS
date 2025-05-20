@@ -6,3 +6,4 @@ PyJWT
 ultralytics
 opencv-python
 Werkzeug
+dotenv

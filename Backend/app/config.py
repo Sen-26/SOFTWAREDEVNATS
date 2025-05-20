@@ -1,6 +1,8 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', '18a65df782964b002cac39954cc92778fd20fad2948261273f9f841b867f2786')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql://aadityasah:postgrespass@localhost/skoupdb')
+    SECRET_KEY = os.getenv('SECRET_KEY')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
