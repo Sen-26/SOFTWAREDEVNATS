@@ -8,3 +8,9 @@ opencv-python
 Werkzeug
 dotenv
 numpy
+requests
+matplotlib
+pillow
+mapbox_vector_tile
+shapely
+pyproj
