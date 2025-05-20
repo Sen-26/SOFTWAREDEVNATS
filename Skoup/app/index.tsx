@@ -372,7 +372,7 @@ export default function HomePage() {
       } as any);
 
       try {
-        const response = await fetch('http://192.168.203.253:5000/process-image', {
+        const response = await fetch('http://192.168.203.253:5431/detection/process-image', {
           method: 'POST',
           body: formData,
           headers: {

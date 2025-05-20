@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Slot, useRouter } from 'expo-router';
 import { useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text, TouchableWithoutFeedback } from 'react-native';
 import { Entypo } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -96,48 +96,54 @@ export default function RootLayout() {
                 </TouchableOpacity>
               </View>
               {menuVisible && (
-                <View style={styles.dropdownMenu}>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => { toggleMenu(); router.push('/'); }}
-                  >
-                    <Ionicons name="home-outline" size={20} color="#333" style={styles.dropdownIcon} />
-                    <Text style={styles.dropdownText}>Home</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => { toggleMenu(); router.push('/profile'); }}
-                  >
-                    <Ionicons name="person-outline" size={20} color="#333" style={styles.dropdownIcon} />
-                    <Text style={styles.dropdownText}>Profile</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => { toggleMenu(); router.push('/shop'); }}
-                  >
-                    <Ionicons name="storefront-outline" size={20} color="#333" style={styles.dropdownIcon} />
-                    <Text style={styles.dropdownText}>Shop</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => { toggleMenu(); /* optionally navigate to settings */ }}
-                  >
-                    <Ionicons name="settings-outline" size={20} color="#333" style={styles.dropdownIcon} />
-                    <Text style={styles.dropdownText}>Settings</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={logout}
-                  >
-                    <Ionicons
-                      name="log-out-outline"
-                      size={20}
-                      color="#333"
-                      style={styles.dropdownIcon}
-                    />
-                    <Text style={styles.dropdownText}>Logout</Text>
-                  </TouchableOpacity>
-                </View>
+                <>
+                  {/* full-screen overlay to catch taps */}
+                  <TouchableWithoutFeedback onPress={toggleMenu}>
+                    <View style={styles.menuOverlay} />
+                  </TouchableWithoutFeedback>
+                  <View style={styles.dropdownMenu}>
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={() => { toggleMenu(); router.push('/'); }}
+                    >
+                      <Ionicons name="home-outline" size={20} color="#333" style={styles.dropdownIcon} />
+                      <Text style={styles.dropdownText}>Home</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={() => { toggleMenu(); router.push('/profile'); }}
+                    >
+                      <Ionicons name="person-outline" size={20} color="#333" style={styles.dropdownIcon} />
+                      <Text style={styles.dropdownText}>Profile</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={() => { toggleMenu(); router.push('/shop'); }}
+                    >
+                      <Ionicons name="storefront-outline" size={20} color="#333" style={styles.dropdownIcon} />
+                      <Text style={styles.dropdownText}>Shop</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={() => { toggleMenu(); /* optionally navigate to settings */ }}
+                    >
+                      <Ionicons name="settings-outline" size={20} color="#333" style={styles.dropdownIcon} />
+                      <Text style={styles.dropdownText}>Settings</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={logout}
+                    >
+                      <Ionicons
+                        name="log-out-outline"
+                        size={20}
+                        color="#333"
+                        style={styles.dropdownIcon}
+                      />
+                      <Text style={styles.dropdownText}>Logout</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
               )}
             </>
           )}
@@ -192,6 +198,10 @@ const styles = StyleSheet.create({
       color: '#333',
       fontSize: 16,
       fontWeight: '500',
+    },
+    menuOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 19,
     },
     loaderContainer: {
       flex: 1,

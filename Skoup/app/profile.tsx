@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
+  ScrollView,
   Text,
   TouchableOpacity,
   Image,
@@ -12,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Entypo } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { LineChart } from 'react-native-chart-kit';
 
 const AVATAR_KEY = '@user_avatar';
 const COIN_KEY = '@user_coins';
@@ -28,7 +30,12 @@ export default function Profile() {
 
   const [coins, setCoins] = useState<number>(0);
 
-  // Reload avatar whenever screen is focused
+  // Replace static state with dynamic history state
+  const [dailyCounts, setDailyCounts] = useState<number[]>([]);
+  const [weeklyCounts, setWeeklyCounts] = useState<number[]>([]);
+  const [monthlyCounts, setMonthlyCounts] = useState<number[]>([]);
+
+  // Reload avatar and histories whenever screen is focused
   useFocusEffect(
     React.useCallback(() => {
       AsyncStorage.getItem(AVATAR_KEY).then(uri => {
@@ -37,6 +44,9 @@ export default function Profile() {
       AsyncStorage.getItem(COIN_KEY).then(value => {
         if (value) setCoins(parseInt(value, 10));
       });
+      AsyncStorage.getItem('@daily_history').then(v => setDailyCounts(v ? JSON.parse(v) : []));
+      AsyncStorage.getItem('@weekly_history').then(v => setWeeklyCounts(v ? JSON.parse(v) : []));
+      AsyncStorage.getItem('@monthly_history').then(v => setMonthlyCounts(v ? JSON.parse(v) : []));
     }, [])
   );
 
@@ -50,6 +60,16 @@ export default function Profile() {
       .toUpperCase();
     setTag('#' + randomTag);
   }, []);
+
+  // Impact calculation constants and state
+  const PIECE_WEIGHT_KG = 0.05;
+  const CO2_PER_KG = 2.5;
+  const WATER_PER_KG = 10;
+  const totalPieces = coins;
+  const totalWeight = (totalPieces * PIECE_WEIGHT_KG).toFixed(1);
+  const totalCO2 = (parseFloat(totalWeight) * CO2_PER_KG).toFixed(1);
+  const totalWater = (parseFloat(totalWeight) * WATER_PER_KG).toFixed(0);
+  const chartWidth = width - 40;
 
   return (
     <View style={styles.container}>
@@ -92,70 +112,132 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
       )}
-      {/* Tabs */}
-      <View style={styles.tabContainer}>
-        {(['Me', 'Friends'] as const).map(tab => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.tab, selectedTab === tab && styles.activeTab]}
-            onPress={() => setSelectedTab(tab)}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                selectedTab === tab && styles.activeTabText,
-              ]}
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Tabs */}
+        <View style={styles.tabContainer}>
+          {(['Me', 'Friends'] as const).map(tab => (
+            <TouchableOpacity
+              key={tab}
+              style={[styles.tab, selectedTab === tab && styles.activeTab]}
+              onPress={() => setSelectedTab(tab)}
             >
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+              <Text
+                style={[
+                  styles.tabText,
+                  selectedTab === tab && styles.activeTabText,
+                ]}
+              >
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      {selectedTab === 'Me' ? (
-        <View style={[styles.meSection, styles.sectionCard]}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View>
-              <Text style={styles.profileName}>Pranav Kumar</Text>
-              <Text style={styles.profileTag}>{tag}</Text>
+        {selectedTab === 'Me' ? (
+          <View style={[styles.meSection, styles.sectionCard]}>
+            {/* Header */}
+            <View style={styles.header}>
+              <View>
+                <Text style={styles.profileName}>Pranav Kumar</Text>
+                <Text style={styles.profileTag}>{tag}</Text>
+              </View>
+              <View style={styles.coinContainer}>
+                <Text style={styles.coinText}>💰 {coins}</Text>
+              </View>
             </View>
-            <View style={styles.coinContainer}>
-              <Text style={styles.coinText}>💰 {coins}</Text>
-            </View>
-          </View>
 
-          {/* Avatar */}
-          <TouchableOpacity
-            style={styles.avatarWrapper}
-            onPress={() => router.push('/edit-avatar')}
-          >
-            {avatarUri ? (
-              <Image source={{ uri: avatarUri }} style={styles.avatar} />
-            ) : (
-              <Image
-                source={require('../assets/avatar-placeholder.jpg')}
-                style={styles.avatar}
+            {/* Avatar */}
+            <TouchableOpacity
+              style={styles.avatarWrapper}
+              onPress={() => router.push('/edit-avatar')}
+            >
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri }} style={styles.avatar} />
+              ) : (
+                <Image
+                  source={require('../assets/avatar-placeholder.jpg')}
+                  style={styles.avatar}
+                />
+              )}
+            </TouchableOpacity>
+
+            {/* Level Section */}
+            <View style={styles.levelSection}>
+              <View style={styles.levelInfo}>
+                <Text style={styles.levelNumber}>5</Text>
+                <Text style={styles.levelLabel}>LEVEL</Text>
+              </View>
+              <View style={styles.progressBar}>
+                <View style={[styles.progressFill, { width: '70%' }]} />
+              </View>
+            </View>
+
+            {/* Impact Dashboard */}
+            <View style={styles.dashboardSection}>
+              <Text style={styles.dashboardHeader}>Your Impact</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dashboardCards}>
+                <View style={styles.metricCard}>
+                  <Text style={styles.metricTitle}>Total Collected</Text>
+                  <Text style={styles.metricValue}>{totalPieces} items</Text>
+                  <Text style={styles.metricSub}>{totalWeight} kg</Text>
+                </View>
+                <View style={styles.metricCard}>
+                  <Text style={styles.metricTitle}>CO₂ Offset</Text>
+                  <Text style={styles.metricValue}>{totalCO2} kg</Text>
+                  <Text style={styles.metricSub}>Equivalent</Text>
+                </View>
+                <View style={styles.metricCard}>
+                  <Text style={styles.metricTitle}>Water Saved</Text>
+                  <Text style={styles.metricValue}>{totalWater} L</Text>
+                  <Text style={styles.metricSub}>Equivalent</Text>
+                </View>
+              </ScrollView>
+              <Text style={styles.chartLabel}>Last 7 Days</Text>
+              <LineChart
+                data={{
+                  labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+                  datasets: [{ data: dailyCounts.length ? dailyCounts : Array(7).fill(0) }],
+                }}
+                width={chartWidth}
+                height={160}
+                chartConfig={styles.chartConfig}
+                bezier
+                style={styles.chartStyle}
               />
-            )}
-          </TouchableOpacity>
-
-          {/* Level Section */}
-          <View style={styles.levelSection}>
-            <View style={styles.levelInfo}>
-              <Text style={styles.levelNumber}>5</Text>
-              <Text style={styles.levelLabel}>LEVEL</Text>
-            </View>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '70%' }]} />
+              <Text style={styles.chartLabel}>Last 4 Weeks</Text>
+              <LineChart
+                data={{
+                  labels: ['Wk1','Wk2','Wk3','Wk4'],
+                  datasets: [{ data: weeklyCounts.length ? weeklyCounts : Array(4).fill(0) }],
+                }}
+                width={chartWidth}
+                height={140}
+                chartConfig={styles.chartConfig}
+                style={styles.chartStyle}
+              />
+              <Text style={styles.chartLabel}>Last 6 Months</Text>
+              <LineChart
+                data={{
+                  labels: ['M1','M2','M3','M4','M5','M6'],
+                  datasets: [{ data: monthlyCounts.length ? monthlyCounts : Array(6).fill(0) }],
+                }}
+                width={chartWidth}
+                height={140}
+                chartConfig={styles.chartConfig}
+                style={styles.chartStyle}
+              />
             </View>
           </View>
-        </View>
-      ) : (
-        <View style={[styles.friendsSection, styles.sectionCard]}>
-          <Text style={styles.genericText}>Friend list goes here</Text>
-        </View>
-      )}
+        ) : (
+          <View style={[styles.friendsSection, styles.sectionCard]}>
+            <Text style={styles.genericText}>Friend list goes here</Text>
+          </View>
+        )}
+      </ScrollView>
 
       {/* Return to Map */}
       <TouchableOpacity
@@ -298,6 +380,66 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+  dashboardSection: {
+    marginTop: 30,
+  },
+  dashboardHeader: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 12,
+  },
+  dashboardCards: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  metricCard: {
+    backgroundColor: '#F7FAFC',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginRight: 16,
+    width: 140,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  metricTitle: {
+    fontSize: 14,
+    color: '#4A5568',
+    marginBottom: 4,
+  },
+  metricValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#2C7A7B',
+  },
+  metricSub: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+  chartLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 16,
+    marginLeft: 2,
+  },
+  chartStyle: {
+    marginVertical: 8,
+    borderRadius: 12,
+    paddingBottom: 5,    // ensure x-axis labels are not cut off
+  },
+  chartConfig: {
+    backgroundGradientFrom: '#fff',
+    backgroundGradientTo: '#fff',
+    color: opacity => `rgba(44, 122, 123, ${opacity})`,
+    labelColor: opacity => `rgba(31, 41, 55, ${opacity})`,
+    propsForDots: { r: '5', strokeWidth: '2', stroke: '#2C7A7B' },
+  },
   dropdownMenu: {
     position: 'absolute',
     top: 80,
@@ -330,5 +472,11 @@ const styles = StyleSheet.create({
     color: '#333',
     fontSize: 16,
     fontWeight: '500',
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100, // space for back button
   },
 });
