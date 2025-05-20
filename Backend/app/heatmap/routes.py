@@ -1,73 +1,125 @@
-import os
-import requests
-import io
-import matplotlib.pyplot as plt
-import numpy as np
-from flask import Blueprint, request, send_file
-from PIL import Image
-from mapbox_vector_tile import decode
+# import io
+# import math
+# import requests
+# import numpy as np
+# from flask import Blueprint, request, send_file, abort
+# from shapely.geometry import Polygon
 
-heatmap_bp = Blueprint('heatmap', __name__)
+# # Force non‑GUI backend
+# import matplotlib
+# matplotlib.use('Agg')
+# import matplotlib.pyplot as plt
+# from matplotlib.collections import PatchCollection
+# from matplotlib.patches import Polygon as MplPolygon
 
-@heatmap_bp.route('/generate-epa-heatmap', methods=['POST'])
-def generate_epa_heatmap():
-    data = request.get_json()
-    region = data.get("region")
-    if not region:
-        return {"error": "Region data is required"}, 400
+# heatmap_bp = Blueprint('heatmap', __name__)
 
-    lat = region['latitude']
-    lng = region['longitude']
-    lat_delta = region['latitudeDelta']
-    lng_delta = region['longitudeDelta']
+# @heatmap_bp.route('/generate-epa-heatmap', methods=['POST'])
+# def generate_epa_heatmap():
+#     payload = request.get_json() or {}
+#     region = payload.get("region")
+#     if not region:
+#         return {"error": "Region data is required"}, 400
 
-    # Convert to Web Mercator (EPSG:3857) for ArcGIS query
-    def lon_lat_to_web_mercator(lon, lat):
-        k = 6378137
-        x = lon * (k * np.pi/180.0)
-        y = np.log(np.tan((90 + lat) * np.pi/360.0)) * k
-        return x, y
+#     # Unpack your region
+#     lat, lng = region['latitude'], region['longitude']
+#     lat_delta, lng_delta = region['latitudeDelta'], region['longitudeDelta']
 
-    min_lat = lat - lat_delta / 2
-    max_lat = lat + lat_delta / 2
-    min_lng = lng - lng_delta / 2
-    max_lng = lng + lng_delta / 2
-    xmin, ymin = lon_lat_to_web_mercator(min_lng, min_lat)
-    xmax, ymax = lon_lat_to_web_mercator(max_lng, max_lat)
+#     # Convert lon/lat → Web Mercator
+#     def lon_lat_to_web_mercator(lon, lat):
+#         k = 6378137.0
+#         x = lon * (k * math.pi / 180.0)
+#         y = math.log(math.tan((90 + lat) * math.pi / 360.0)) * k
+#         return x, y
 
-    url = (
-        "https://services2.arcgis.com/PYn6bWCjT6bhw1z3/arcgis/rest/services/"
-        "Escaped_Trash_Risk_Model_WFL1/FeatureServer/19/query"
-        f"?f=pbf&geometry={xmin},{ymin},{xmax},{ymax}&geometryType=esriGeometryEnvelope"
-        f"&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID,USCBmodel_dens"
-        f"&resultType=tile&quantizationParameters=%7B%22extent%22:%7B%22xmin%22:{xmin},%22ymin%22:{ymin},%22xmax%22:{xmax},%22ymax%22:{ymax}%7D,%22mode%22:%22view%22,%22tolerance%22:1%7D"
-    )
+#     # Build envelope
+#     min_lat = lat - lat_delta/2
+#     max_lat = lat + lat_delta/2
+#     min_lng = lng - lng_delta/2
+#     max_lng = lng + lng_delta/2
 
-    resp = requests.get(url)
-    if not resp.ok:
-        return {"error": "Failed to fetch PBF"}, 500
+#     xmin, ymin = lon_lat_to_web_mercator(min_lng, min_lat)
+#     xmax, ymax = lon_lat_to_web_mercator(max_lng, max_lat)
 
-    tile_data = decode(resp.content)
-    features = tile_data.get("features", []) or list(tile_data.values())[0]
+#     # Fetch features
+#     url = (
+#       "https://services2.arcgis.com/PYn6bWCjT6bhw1z3/arcgis/rest/services/"
+#       "Escaped_Trash_Risk_Model_WFL1/FeatureServer/19/query"
+#       f"?f=json"
+#       f"&geometry={xmin},{ymin},{xmax},{ymax}"
+#       "&geometryType=esriGeometryEnvelope"
+#       "&spatialRel=esriSpatialRelIntersects"
+#       "&outFields=OBJECTID,USCBmodel_dens"
+#     )
+#     resp = requests.get(url)
+#     if not resp.ok:
+#         abort(502, "Failed to fetch feature data")
+#     features = resp.json().get("features", [])
 
-    width, height = 512, 512
-    grid = np.zeros((height, width))
+#     patches = []
+#     densities = []
+#     all_x, all_y = [], []
 
-    for f in features:
-        props = f.get("properties", {})
-        geom = f.get("geometry", {})
-        if props.get("USCBmodel_dens") and geom.get("type") == "Point":
-            x, y = geom["coordinates"]
-            px = int(x / 4096 * width)
-            py = int(y / 4096 * height)
-            grid[py % height, px % width] += props["USCBmodel_dens"]
+#     # Reconstruct each square
+#     for feat in features:
+#         dens = feat['attributes'].get('USCBmodel_dens')
+#         rings = feat.get('geometry', {}).get('rings')
+#         if dens is None or not rings:
+#             continue
 
-    plt.figure(figsize=(5, 5))
-    plt.imshow(grid, cmap='hot', interpolation='nearest')
-    plt.axis('off')
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png', bbox_inches='tight', pad_inches=0)
-    buf.seek(0)
-    plt.close()
+#         ring = rings[0]
+#         x0, y0 = ring[0]
+#         pts = [(x0, y0)]
+#         x, y = x0, y0
+#         for dx, dy in ring[1:]:
+#             x += dx
+#             y += dy
+#             pts.append((x, y))
 
-    return send_file(buf, mimetype='image/png')
+#         # collect coords for extent
+#         xs, ys = zip(*pts)
+#         all_x.extend(xs)
+#         all_y.extend(ys)
+
+#         patches.append(MplPolygon(pts, closed=True))
+#         densities.append(dens)
+
+#     if not patches:
+#         abort(404, "No valid features to plot")
+
+#     # Build figure
+#     fig, ax = plt.subplots(figsize=(6,6), dpi=150)
+#     cmap = plt.get_cmap("Greens")
+#     norm = plt.Normalize(vmin=min(densities), vmax=max(densities))
+#     coll = PatchCollection(patches, cmap=cmap, norm=norm, edgecolor="none")
+#     coll.set_array(np.array(densities))
+#     ax.add_collection(coll)
+
+#     # Tight bounds around your data
+#     ax.set_xlim(min(all_x), max(all_x))
+#     ax.set_ylim(min(all_y), max(all_y))
+
+#     # No axes, ticks, margins
+#     ax.axis('off')
+#     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+
+#     # Render transparent PNG
+#     buf = io.BytesIO()
+#     fig.savefig(
+#         buf,
+#         format='png',
+#         transparent=True,
+#         bbox_inches='tight',
+#         pad_inches=0
+#     )
+#     fig.savefig(
+#         "/tmp/epa_heatmap.png",
+#         format="png",
+#         transparent=True,
+#         bbox_inches="tight",
+#         pad_inches=0
+#     )
+#     plt.close(fig)
+#     buf.seek(0)
+
+#     return send_file(buf, mimetype='image/png')
