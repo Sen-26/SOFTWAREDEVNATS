@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from './_layout';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 const apiURL = "http://192.168.193.45:5431/";
@@ -23,72 +24,78 @@ export default function ShopPage() {
   const [selectedTab, setSelectedTab] = useState<Tab>('Challenges');
 
   const renderChallenges = () => (
-    <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="sunny-outline" size={20} color="#007bff" />
-          <Text style={styles.cardTitle}>Daily Missions</Text>
+    <SafeAreaView>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="sunny-outline" size={20} color="#007bff" />
+            <Text style={styles.cardTitle}>Daily Missions</Text>
+          </View>
+          <Text style={styles.cardText}>• Pick 10 pieces of trash today</Text>
+          <Text style={styles.cardText}>• Earn 20 coins for completion</Text>
         </View>
-        <Text style={styles.cardText}>• Pick 10 pieces of trash today</Text>
-        <Text style={styles.cardText}>• Earn 20 coins for completion</Text>
-      </View>
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="calendar-outline" size={20} color="#007bff" />
-          <Text style={styles.cardTitle}>Weekly Missions</Text>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="calendar-outline" size={20} color="#007bff" />
+            <Text style={styles.cardTitle}>Weekly Missions</Text>
+          </View>
+          <Text style={styles.cardText}>• Clean 50 items this week</Text>
+          <Text style={styles.cardText}>• Earn 150 coins for completion</Text>
         </View>
-        <Text style={styles.cardText}>• Clean 50 items this week</Text>
-        <Text style={styles.cardText}>• Earn 150 coins for completion</Text>
-      </View>
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="location-outline" size={20} color="#007bff" />
-          <Text style={styles.cardTitle}>Nearby Hotspot</Text>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="location-outline" size={20} color="#007bff" />
+            <Text style={styles.cardTitle}>Nearby Hotspot</Text>
+          </View>
+          <Text style={styles.cardText}>• Central Park: Collect 5 items</Text>
+          <Text style={styles.cardText}>• Earn 30 coins and badge</Text>
         </View>
-        <Text style={styles.cardText}>• Central Park: Collect 5 items</Text>
-        <Text style={styles.cardText}>• Earn 30 coins and badge</Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 
   const renderStreaks = () => (
-    <View style={styles.content}>
-      <View style={styles.streakCard}>
-        <View style={styles.streakCircle}>
-          <Text style={styles.streakNumber}>7</Text>
+    <SafeAreaView>
+      <View style={styles.content}>
+        <View style={styles.streakCard}>
+          <View style={styles.streakCircle}>
+            <Text style={styles.streakNumber}>7</Text>
+          </View>
+          <Text style={styles.streakLabel}>DAY STREAK</Text>
         </View>
-        <Text style={styles.streakLabel}>DAY STREAK</Text>
+        <Text style={styles.sectionText}>
+          Keep up your daily cleanup activity to build streaks and unlock exclusive rewards.
+        </Text>
       </View>
-      <Text style={styles.sectionText}>
-        Keep up your daily cleanup activity to build streaks and unlock exclusive rewards.
-      </Text>
-    </View>
+    </SafeAreaView>
   );
 
   const renderAchievements = () => (
-    <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="trophy-outline" size={20} color="#007bff" />
-          <Text style={styles.cardTitle}>100 Pieces Collected</Text>
+    <SafeAreaView>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="trophy-outline" size={20} color="#007bff" />
+            <Text style={styles.cardTitle}>100 Pieces Collected</Text>
+          </View>
+          <Text style={styles.cardText}>Unlocked on May 10, 2025</Text>
         </View>
-        <Text style={styles.cardText}>Unlocked on May 10, 2025</Text>
-      </View>
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="trophy-outline" size={20} color="#007bff" />
-          <Text style={styles.cardTitle}>30-Day Streak</Text>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="trophy-outline" size={20} color="#007bff" />
+            <Text style={styles.cardTitle}>30-Day Streak</Text>
+          </View>
+          <Text style={styles.cardText}>Unlocked on May 5, 2025</Text>
         </View>
-        <Text style={styles.cardText}>Unlocked on May 5, 2025</Text>
-      </View>
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="trophy-outline" size={20} color="#007bff" />
-          <Text style={styles.cardTitle}>Community Hero</Text>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="trophy-outline" size={20} color="#007bff" />
+            <Text style={styles.cardTitle}>Community Hero</Text>
+          </View>
+          <Text style={styles.cardText}>Helped organize 3 events</Text>
         </View>
-        <Text style={styles.cardText}>Helped organize 3 events</Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 
   const shopItems = [
@@ -114,6 +121,18 @@ export default function ShopPage() {
       id: '4',
       name: 'map_4',
       cost: 120,
+      image: 'https://i.imgur.com/1Jp3Q7a.png',
+    },
+    {
+      id: '5',
+      name: 'banner_1',
+      cost: 2,
+      image: 'https://i.imgur.com/1Jp3Q7a.png',
+    },
+    {
+      id: '6',
+      name: 'banner_2',
+      cost: 2,
       image: 'https://i.imgur.com/1Jp3Q7a.png',
     },
   ];
@@ -188,49 +207,51 @@ export default function ShopPage() {
   
 
   const renderShop = () => (
-    <View>
-      <Text style={styles.coinDisplay}>💰 Coins: {userCoin}</Text>
-      <FlatList
-        contentContainerStyle={styles.content}
-        data={shopItems}
-        keyExtractor={item => item.id}
-        numColumns={2}
-        renderItem={({ item }) => {
-          const owned = unlockedItems.includes(item.name); // Fix: check by name
-          const equipped = equippedItems.includes(item.name);
-  
-          return (
-            <View style={styles.shopCard}>
-              <Image source={{ uri: item.image }} style={styles.shopImage} />
-              <Text style={styles.shopName}>{item.name}</Text>
-              <Text style={styles.shopCost}>💎 {item.cost}</Text>
-  
-              {owned ? (
-                equipped ? (
-                  <View style={styles.equippedBadge}>
-                    <Text style={styles.equippedText}>Equipped</Text>
-                  </View>
+    <SafeAreaView>
+      <View>
+        <Text style={styles.coinDisplay}>💰 Coins: {userCoin}</Text>
+        <FlatList
+          contentContainerStyle={styles.content}
+          data={shopItems}
+          keyExtractor={item => item.id}
+          numColumns={2}
+          renderItem={({ item }) => {
+            const owned = unlockedItems.includes(item.name); // Fix: check by name
+            const equipped = equippedItems.includes(item.name);
+    
+            return (
+              <View style={styles.shopCard}>
+                <Image source={{ uri: item.image }} style={styles.shopImage} />
+                <Text style={styles.shopName}>{item.name}</Text>
+                <Text style={styles.shopCost}>💎 {item.cost}</Text>
+    
+                {owned ? (
+                  equipped ? (
+                    <View style={styles.equippedBadge}>
+                      <Text style={styles.equippedText}>Equipped</Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.equipButton}
+                      onPress={() => equipItem(item.name)}
+                    >
+                      <Text style={styles.equipButtonText}>Equip</Text>
+                    </TouchableOpacity>
+                  )
                 ) : (
                   <TouchableOpacity
-                    style={styles.equipButton}
-                    onPress={() => equipItem(item.name)}
+                    style={styles.buyButton}
+                    onPress={() => buyItem(item)}
                   >
-                    <Text style={styles.equipButtonText}>Equip</Text>
+                    <Text style={styles.buyButtonText}>Buy</Text>
                   </TouchableOpacity>
-                )
-              ) : (
-                <TouchableOpacity
-                  style={styles.buyButton}
-                  onPress={() => buyItem(item)}
-                >
-                  <Text style={styles.buyButtonText}>Buy</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          );
-        }}
-      />
-    </View>
+                )}
+              </View>
+            );
+          }}
+        />
+      </View>
+    </SafeAreaView>
   );
   
   
@@ -333,12 +354,19 @@ export default function ShopPage() {
   );
 }
 
+
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
   content: {
     paddingVertical: 20,
     paddingHorizontal: 16,
+    paddingBottom: 80, // So content doesn't get hidden by tabs
   },
+
   // Cards
   card: {
     backgroundColor: '#fff',
@@ -364,7 +392,11 @@ const styles = StyleSheet.create({
     color: '#111',
     marginLeft: 8,
   },
-  cardText: { fontSize: 14, color: '#444', marginTop: 8 },
+  cardText: {
+    fontSize: 14,
+    color: '#444',
+    marginTop: 8,
+  },
 
   streakCard: {
     backgroundColor: '#fff',
@@ -397,7 +429,12 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: '#333',
   },
-  sectionText: { fontSize: 16, color: '#333', paddingHorizontal: 16 },
+
+  sectionText: {
+    fontSize: 16,
+    color: '#333',
+    paddingHorizontal: 16,
+  },
 
   // Shop cards
   shopCard: {
@@ -419,15 +456,27 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     marginBottom: 12,
   },
-  shopName: { fontSize: 16, fontWeight: '600', color: '#111', marginBottom: 8 },
-  shopCost: { fontSize: 14, color: '#666', marginBottom: 12 },
+  shopName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111',
+    marginBottom: 8,
+  },
+  shopCost: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+  },
   buyButton: {
     backgroundColor: '#28a745',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  buyButtonText: { color: '#fff', fontWeight: '600' },
+  buyButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
 
   // Bottom tabs
   tabs: {
@@ -436,19 +485,36 @@ const styles = StyleSheet.create({
     borderTopColor: '#E5E7EB',
     backgroundColor: '#fff',
     paddingVertical: 8,
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 12,
   },
-  coinDisplay: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-    textAlign: 'center',
+  tabText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
   },
+  tabTextActive: {
+    color: '#007bff',
+    fontWeight: '600',
+  },
+
+  // Coin display
+  coinDisplay: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111',
+    padding: 16,
+    textAlign: 'center',
+    backgroundColor: '#fff',
+  },
+
+  // Equip button
   equipButton: {
     backgroundColor: '#007bff',
     paddingHorizontal: 16,
@@ -459,7 +525,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-  
+
   equippedBadge: {
     backgroundColor: '#6c757d',
     paddingHorizontal: 12,
@@ -470,13 +536,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-  
+
   ownedText: {
     color: '#999',
     fontWeight: '600',
     fontSize: 14,
     marginTop: 4,
   },
-  tabText: { fontSize: 12, color: '#666', marginTop: 4 },
-  tabTextActive: { color: '#007bff', fontWeight: '600' },
 });
+
+
