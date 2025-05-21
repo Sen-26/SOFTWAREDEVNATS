@@ -2,24 +2,22 @@ import { Entypo, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
-import { useRouter } from 'expo-router';
-import { useFocusEffect } from 'expo-router';
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Animated,
+  Easing,
   Image,
+  ImageBackground,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  ImageBackground,
-  Easing,
 } from 'react-native';
-import { Platform, StatusBar } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from './_layout';
 
 const apiURL = "http://192.168.193.45:5431/";
@@ -495,6 +493,32 @@ export default function HomePage() {
         });
       })();
     }, []);
+
+    // Update user location on entering HomePage
+    useEffect(() => {
+      (async () => {
+        if (!token) return;
+        try {
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status === 'granted') {
+            const loc = await Location.getCurrentPositionAsync({});
+            await fetch(`${apiURL}users/me/location`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                latitude: loc.coords.latitude,
+                longitude: loc.coords.longitude,
+              }),
+            });
+          }
+        } catch (e) {
+          // Ignore location errors
+        }
+      })();
+    }, [token]);
 
     // Show scan results
     if (showResults) {
@@ -1149,4 +1173,3 @@ export default function HomePage() {
 
 });
 
-    

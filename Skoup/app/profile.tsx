@@ -1,22 +1,20 @@
 // app/profile.tsx
-import React, { useState, useEffect } from 'react';
+import { Entypo, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Buffer } from 'buffer';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Dimensions,
+  Image,
   ScrollView,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  Image,
-  StyleSheet,
-  Dimensions,
-  ActivityIndicator,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Entypo } from '@expo/vector-icons';
-import { FontAwesome5 } from '@expo/vector-icons';
-import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from './_layout';
-import { Buffer } from 'buffer';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE = 'http://192.168.193.45:5431'; // Update with your server address
 
@@ -93,7 +91,7 @@ export default function Profile() {
   const PIECE_WEIGHT_KG = 0.05;
   const CO2_PER_KG = 2.5;
   const WATER_PER_KG = 10;
-  const totalPieces = coins;
+  const totalPieces = trashCollected;
   const totalWeight = (totalPieces * PIECE_WEIGHT_KG).toFixed(1);
   const totalCO2 = (parseFloat(totalWeight) * CO2_PER_KG).toFixed(1);
   const totalWater = (parseFloat(totalWeight) * WATER_PER_KG).toFixed(0);
