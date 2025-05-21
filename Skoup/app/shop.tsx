@@ -1,5 +1,5 @@
 // app/shop.tsx
-import React, { useState } from 'react';
+import React, { useState , useEffect} from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,11 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import { useAuth } from './_layout';
 
 const { width } = Dimensions.get('window');
+const apiURL = "http://192.168.193.45:5431/";
 
 type Tab = 'Challenges' | 'Streaks' | 'Achievements' | 'Shop';
 
@@ -91,49 +94,146 @@ export default function ShopPage() {
   const shopItems = [
     {
       id: '1',
-      name: 'Eco Gloves',
-      cost: 100,
+      name: 'map_1',
+      cost: 1,
       image: 'https://i.imgur.com/OY1T8KX.png',
     },
     {
       id: '2',
-      name: 'Cleanup Badge',
-      cost: 200,
+      name: 'map_2',
+      cost: 1,
       image: 'https://i.imgur.com/BT0Q3qT.png',
     },
     {
       id: '3',
-      name: 'Seed Bomb Pack',
+      name: 'map_3',
       cost: 150,
       image: 'https://i.imgur.com/3V6JjNy.png',
     },
     {
       id: '4',
-      name: 'Reusable Bag',
+      name: 'map_4',
       cost: 120,
       image: 'https://i.imgur.com/1Jp3Q7a.png',
     },
   ];
+  const [userCoin, setUserCoin] = useState(0);
+  const [unlockedItems, setUnlockedItems] = useState<string[]>([]);
+  const {token} = useAuth(); // Replace with real token logic
+  
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+  const [equippedItems, setEquippedItems] = useState<string[]>([]);
+
+  const fetchUserData = async () => {
+    try {
+      const res = await axios.get(apiURL+'users/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUserCoin(res.data.coin);
+      setUnlockedItems(res.data.unlocked_items || []);
+      setEquippedItems(res.data.equipped_items || []);
+    } catch (err) {
+      console.error('Failed to fetch user data', err);
+    }
+  };
+  const equipItem = async (itemId: string) => {
+    try {
+      await axios.post(
+        apiURL+'users/me/equip_item',
+        { new_item: itemId },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      fetchUserData(); // Refresh both coin, unlocked, and equipped state
+    } catch (err) {
+      console.error('Failed to equip item', err);
+      alert('Could not equip item.');
+    }
+  };
+  
+  const buyItem = async (item: typeof shopItems[0]) => {
+    if (unlockedItems.includes(item.name)) {
+      alert('You already own this item.');
+      return;
+    }
+  
+    if (userCoin < item.cost) {
+      alert('Not enough coins!');
+      return;
+    }
+  
+    try {
+      await axios.post(
+        apiURL + 'users/me/coin',
+        { amount: -item.cost },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      await axios.post(
+        apiURL + 'users/me/add_to_unlocked_items',
+        { item: item.name },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      alert(`${item.name} purchased!`);
+      fetchUserData();
+    } catch (err) {
+      console.error('Purchase failed', err);
+      alert('Failed to purchase item.');
+    }
+  };
+  
 
   const renderShop = () => (
-    <FlatList
-      contentContainerStyle={styles.content}
-      data={shopItems}
-      keyExtractor={item => item.id}
-      numColumns={2}
-      renderItem={({ item }) => (
-        <View style={styles.shopCard}>
-          <Image source={{ uri: item.image }} style={styles.shopImage} />
-          <Text style={styles.shopName}>{item.name}</Text>
-          <Text style={styles.shopCost}>💎 {item.cost}</Text>
-          <TouchableOpacity style={styles.buyButton}>
-            <Text style={styles.buyButtonText}>Buy</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    />
+    <View>
+      <Text style={styles.coinDisplay}>💰 Coins: {userCoin}</Text>
+      <FlatList
+        contentContainerStyle={styles.content}
+        data={shopItems}
+        keyExtractor={item => item.id}
+        numColumns={2}
+        renderItem={({ item }) => {
+          const owned = unlockedItems.includes(item.name); // Fix: check by name
+          const equipped = equippedItems.includes(item.name);
+  
+          return (
+            <View style={styles.shopCard}>
+              <Image source={{ uri: item.image }} style={styles.shopImage} />
+              <Text style={styles.shopName}>{item.name}</Text>
+              <Text style={styles.shopCost}>💎 {item.cost}</Text>
+  
+              {owned ? (
+                equipped ? (
+                  <View style={styles.equippedBadge}>
+                    <Text style={styles.equippedText}>Equipped</Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.equipButton}
+                    onPress={() => equipItem(item.name)}
+                  >
+                    <Text style={styles.equipButtonText}>Equip</Text>
+                  </TouchableOpacity>
+                )
+              ) : (
+                <TouchableOpacity
+                  style={styles.buyButton}
+                  onPress={() => buyItem(item)}
+                >
+                  <Text style={styles.buyButtonText}>Buy</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          );
+        }}
+      />
+    </View>
   );
-
+  
+  
   const renderContent = () => {
     switch (selectedTab) {
       case 'Challenges':
@@ -341,6 +441,41 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: 12,
+  },
+  coinDisplay: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  equipButton: {
+    backgroundColor: '#007bff',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  equipButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  
+  equippedBadge: {
+    backgroundColor: '#6c757d',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  equippedText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  
+  ownedText: {
+    color: '#999',
+    fontWeight: '600',
+    fontSize: 14,
+    marginTop: 4,
   },
   tabText: { fontSize: 12, color: '#666', marginTop: 4 },
   tabTextActive: { color: '#007bff', fontWeight: '600' },
