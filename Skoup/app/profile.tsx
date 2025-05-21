@@ -28,7 +28,7 @@ export default function Profile() {
 
   const [menuVisible, setMenuVisible] = useState(false);
   const toggleMenu = () => setMenuVisible(v => !v);
-  
+
 
   // User profile state
   const { token } = useAuth();
@@ -41,7 +41,14 @@ export default function Profile() {
   const [dailyCounts, setDailyCounts] = useState<number[]>([]);
   const [weeklyCounts, setWeeklyCounts] = useState<number[]>([]);
   const [monthlyCounts, setMonthlyCounts] = useState<number[]>([]);
+  const { level, progress, goal } = getLevelAndProgress(trashCollected);
 
+  function getLevelAndProgress(trashCollected: number) {
+    const level = Math.floor(trashCollected / 50) + 1;
+    const goal = level * 50;
+    const progress = (trashCollected % 50) / 50; // 0 to 1
+    return { level, progress, goal };
+  }
   useFocusEffect(
     React.useCallback(() => {
       fetch(`${API_BASE}/users/me`, {
@@ -182,9 +189,9 @@ export default function Profile() {
               style={styles.avatarWrapper}
               onPress={() => router.push('/edit-avatar')}
             >
-              { !avatarUri && (
+              {!avatarUri && (
                 <ActivityIndicator size="large" color="#007bff" style={styles.avatarLoader} />
-              ) }
+              )}
               {avatarUri ? (
                 <Image source={{ uri: avatarUri }} style={styles.avatar} />
               ) : (
@@ -198,14 +205,35 @@ export default function Profile() {
             {/* Level Section */}
             <View style={styles.levelSection}>
               <View style={styles.levelInfo}>
-                <Text style={styles.levelNumber}>5</Text>
+                <Text style={styles.levelNumber}>{level}</Text>
                 <Text style={styles.levelLabel}>LEVEL</Text>
               </View>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: '70%' }]} />
+              <View style={{ flex: 1 }}>
+                <View
+                  style={[
+                    styles.progressBar,
+                    progress >= 1 && { backgroundColor: '#fff', borderWidth: 1, borderColor: '#000' },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${progress * 100}%`,
+                      },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.progressCenterText,
+                      progress >= 0.5 && { color: '#fff' },
+                    ]}
+                  >
+                    {trashCollected} / {goal}
+                  </Text>
+                </View>
               </View>
             </View>
-
             {/* Impact Dashboard */}
             <View style={styles.dashboardSection}>
               <Text style={styles.dashboardHeader}>Your Impact</Text>
@@ -229,7 +257,7 @@ export default function Profile() {
               <Text style={styles.chartLabel}>Last 7 Days</Text>
               <LineChart
                 data={{
-                  labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+                  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                   datasets: [{ data: dailyCounts.length ? dailyCounts : Array(7).fill(0) }],
                 }}
                 width={chartWidth}
@@ -241,7 +269,7 @@ export default function Profile() {
               <Text style={styles.chartLabel}>Last 4 Weeks</Text>
               <LineChart
                 data={{
-                  labels: ['Wk1','Wk2','Wk3','Wk4'],
+                  labels: ['Wk1', 'Wk2', 'Wk3', 'Wk4'],
                   datasets: [{ data: weeklyCounts.length ? weeklyCounts : Array(4).fill(0) }],
                 }}
                 width={chartWidth}
@@ -252,7 +280,7 @@ export default function Profile() {
               <Text style={styles.chartLabel}>Last 6 Months</Text>
               <LineChart
                 data={{
-                  labels: ['M1','M2','M3','M4','M5','M6'],
+                  labels: ['M1', 'M2', 'M3', 'M4', 'M5', 'M6'],
                   datasets: [{ data: monthlyCounts.length ? monthlyCounts : Array(6).fill(0) }],
                 }}
                 width={chartWidth}
@@ -263,7 +291,7 @@ export default function Profile() {
             </View>
           </View>
         ) : (
-          <View style={[styles.friendsSection, styles.sectionCard]}>
+          <View style={[styles.leaderBoardSection, styles.sectionCard]}>
             <Text style={styles.genericText}>Friend list goes here</Text>
           </View>
         )}
@@ -330,15 +358,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  profileName: { 
-    fontSize: 30, 
-    fontWeight: 'bold', 
-    color: '#333' 
+  profileName: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#333'
   },
-  profileTag: { 
-    fontSize: 18, 
-    color: '#888', 
-    marginTop: 6 
+  profileTag: {
+    fontSize: 18,
+    color: '#888',
+    marginTop: 6
   },
   coinContainer: {
     backgroundColor: '#f0f0f0',
@@ -389,17 +417,20 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     width: width - 125,
-    height: 16,
-    backgroundColor: '#EEE',
-    borderRadius: 8,
+    height: 28, // taller bar
+    backgroundColor: '#EEE', // default black
+    borderRadius: 14,
     overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#007bff',
   },
 
-  friendsSection: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  leaderBoardSection: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   genericText: { fontSize: 16, color: '#666' },
 
   backButton: {
@@ -443,6 +474,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
     elevation: 3,
+  },
+  progressCenterText: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    color: '#000',
+    fontWeight: 'bold',
+    fontSize: 16,
+    zIndex: 2,
   },
   metricTitle: {
     fontSize: 14,

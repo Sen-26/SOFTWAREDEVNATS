@@ -1,5 +1,6 @@
 import { Entypo, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Buffer } from 'buffer';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -372,7 +373,6 @@ map_2:
 const AVATAR_KEY = '@user_avatar';
 const COIN_KEY = '@user_coins';
 const EPA_MAP_VISIBLE = '@epa_map_visible';
-const userName = 'Pranav';
 
 export default function HomePage() {
     const router = useRouter();
@@ -397,6 +397,18 @@ export default function HomePage() {
         })
           .then(res => res.json())
           .then(data => {
+            const endpoint = `${apiURL}/users/${data.id}/avatar?t=${Date.now()}`;
+          // Fetch raw image bytes and convert to base64 data URI
+          fetch(endpoint, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+            .then(res => res.arrayBuffer())
+            .then(buffer => {
+              const b64 = Buffer.from(buffer).toString('base64');
+              setAvatarUri(`data:image/png;base64,${b64}`);
+            })
+            .catch(console.error);
+          if (data.username) setUserName(data.username);
             // update coin in AsyncStorage for progress calc
             setEquippedItems(data.equipped_items || []);
             console.log(data.equipped_items)
@@ -439,6 +451,7 @@ export default function HomePage() {
     const [epaMapOpacity, setEpaMapOpacity] = useState(0.7);
     
     const [avatarUri, setAvatarUri] = useState<string | null>(null);
+    const [userName, setUserName] = useState<string | null>(null);
 
     useEffect(() => {
       AsyncStorage.getItem(AVATAR_KEY).then(uri => {
@@ -805,7 +818,7 @@ export default function HomePage() {
               source={
                 avatarUri
                   ? { uri: avatarUri }
-                  : { uri: 'https://i.pravatar.cc/100' }
+                  : { uri: require('../assets/avatar-placeholder.jpg') }
               }
               style={styles.profileImage}
             />

@@ -53,6 +53,15 @@ def login():
         return jsonify({'token': token})
     return jsonify({'message': 'Invalid credentials'}), 401
 
+@auth_bp.route('/me/streak_check', methods=['GET'])
+@token_required
+def streak_check(current_user):
+    today = date.today()
+    last = current_user.last_streak_date
+    # Streak is broken if last_streak_date is None or more than 1 day ago
+    broken = last is None or (today - last).days > 1
+    return jsonify({'streak_broken': broken})
+
 def update_streak(user):
     today = date.today()
     if user.last_streak_date == today:
