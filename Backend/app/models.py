@@ -13,8 +13,8 @@ class User(db.Model):
     equipped_items = db.Column(MutableList.as_mutable(db.ARRAY(db.String)), default=list)
     streak = db.Column(db.Integer, default=0, nullable=False)
     last_streak_date = db.Column(db.Date, nullable=True)
-    # latitude = db.Column(db.Float, nullable=True)
-    # longitude = db.Column(db.Float, nullable=True)
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

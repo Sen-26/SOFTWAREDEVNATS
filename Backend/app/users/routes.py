@@ -21,7 +21,9 @@ def get_my_profile(current_user):
         'unlocked_items': current_user.unlocked_items,
         'equipped_items': current_user.equipped_items,
         'streak': current_user.streak,
-        'last_streak_date': current_user.last_streak_date
+        'last_streak_date': current_user.last_streak_date,
+        'latitude': current_user.latitude,
+        'longitude': current_user.longitude
     })
 
 @users_bp.route('/<int:user_id>', methods=['GET'])
@@ -39,7 +41,9 @@ def get_user_profile(current_user, user_id):
         'unlocked_items': user.unlocked_items,
         'equipped_items': user.equipped_items,
         'streak': user.streak,
-        'last_streak_date': user.last_streak_date
+        'last_streak_date': user.last_streak_date,
+        'latitude': user.latitude,
+        'longitude': user.longitude
     })
 
 @users_bp.route('/me/avatar', methods=['POST'])
@@ -107,18 +111,20 @@ def add_to_unlocked_items(current_user):
 @token_required
 def equip_item(current_user):
     data = request.get_json()
-    previous = data.get('previous')
     new_item = data.get('new_item')
     if not new_item or not isinstance(new_item, str):
         return jsonify({'error': 'Invalid new_item'}), 400
     if new_item not in current_user.unlocked_items:
         return jsonify({'error': 'Item not unlocked'}), 400
-    # Remove previous if present
-    if previous in current_user.equipped_items:
-        current_user.equipped_items.remove(previous)
-    # Add new_item if not already equipped
-    if new_item not in current_user.equipped_items:
-        current_user.equipped_items.append(new_item)
+    # Extract type from new_item (e.g., 'map_1' -> 'map')
+    try:
+        new_type = new_item.split('_', 1)[0]
+    except Exception:
+        return jsonify({'error': 'Invalid item format'}), 400
+    # Remove any equipped item of the same type
+    updated_equipped = [item for item in current_user.equipped_items if not item.startswith(new_type + '_')]
+    updated_equipped.append(new_item)
+    current_user.equipped_items = updated_equipped
     db.session.commit()
     return jsonify({'equipped_items': current_user.equipped_items})
 
