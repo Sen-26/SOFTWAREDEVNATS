@@ -15,7 +15,31 @@ def get_my_profile(current_user):
     return jsonify({
         'id': current_user.id,
         'username': current_user.username,
-        'avatar_path': current_user.avatar_path
+        'avatar_path': current_user.avatar_path,
+        'coin': current_user.coin,
+        'trash_collected': current_user.trash_collected,
+        'unlocked_items': current_user.unlocked_items,
+        'equipped_items': current_user.equipped_items,
+        'streak': current_user.streak,
+        'last_streak_date': current_user.last_streak_date
+    })
+
+@users_bp.route('/<int:user_id>', methods=['GET'])
+@token_required
+def get_user_profile(current_user, user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'avatar_path': user.avatar_path,
+        'coin': user.coin,
+        'trash_collected': user.trash_collected,
+        'unlocked_items': user.unlocked_items,
+        'equipped_items': user.equipped_items,
+        'streak': user.streak,
+        'last_streak_date': user.last_streak_date
     })
 
 @users_bp.route('/me/avatar', methods=['POST'])
@@ -44,4 +68,96 @@ def get_profile_picture(current_user, user_id):
             return send_file(filepath)
     return jsonify({'error': 'Avatar not found'}), 404
 
-# Add more user-related endpoints here
+
+@users_bp.route('/me/coin', methods=['POST'])
+@token_required
+def add_coin(current_user):
+    data = request.get_json()
+    amount = data.get('amount', 0)
+    if not isinstance(amount, int):
+        return jsonify({'error': 'Invalid amount'}), 400
+    current_user.coin += amount
+    db.session.commit()
+    return jsonify({'coin': current_user.coin})
+
+@users_bp.route('/me/trash_collected', methods=['POST'])
+@token_required
+def add_trash_collected(current_user):
+    data = request.get_json()
+    amount = data.get('amount', 0)
+    if not isinstance(amount, int):
+        return jsonify({'error': 'Invalid amount'}), 400
+    current_user.trash_collected += amount
+    db.session.commit()
+    return jsonify({'trash_collected': current_user.trash_collected})
+
+@users_bp.route('/me/add_to_unlocked_items', methods=['POST'])
+@token_required
+def add_to_unlocked_items(current_user):
+    data = request.get_json()
+    item = data.get('item')
+    if not item or not isinstance(item, str):
+        return jsonify({'error': 'Invalid item'}), 400
+    if item not in current_user.unlocked_items:
+        current_user.unlocked_items.append(item)
+        db.session.commit()
+    return jsonify({'unlocked_items': current_user.unlocked_items})
+
+@users_bp.route('/me/equip_item', methods=['POST'])
+@token_required
+def equip_item(current_user):
+    data = request.get_json()
+    previous = data.get('previous')
+    new_item = data.get('new_item')
+    if not new_item or not isinstance(new_item, str):
+        return jsonify({'error': 'Invalid new_item'}), 400
+    if new_item not in current_user.unlocked_items:
+        return jsonify({'error': 'Item not unlocked'}), 400
+    # Remove previous if present
+    if previous in current_user.equipped_items:
+        current_user.equipped_items.remove(previous)
+    # Add new_item if not already equipped
+    if new_item not in current_user.equipped_items:
+        current_user.equipped_items.append(new_item)
+    db.session.commit()
+    return jsonify({'equipped_items': current_user.equipped_items})
+
+@users_bp.route('/me/location', methods=['POST'])
+@token_required
+def update_location(current_user):
+    data = request.get_json()
+    lat = data.get('latitude')
+    lng = data.get('longitude')
+    if lat is None or lng is None:
+        return jsonify({'error': 'Latitude and longitude required'}), 400
+    current_user.latitude = lat
+    current_user.longitude = lng
+    db.session.commit()
+    return jsonify({'message': 'Location updated'})
+
+import math
+
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371  # Earth radius in km
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+@users_bp.route('/nearby', methods=['POST'])
+@token_required
+def get_users_nearby(current_user):
+    data = request.get_json()
+    radius = data.get('radius', 1)  # default 1 km
+    if current_user.latitude is None or current_user.longitude is None:
+        return jsonify({'error': 'Current user location not set'}), 400
+    users = User.query.filter(User.id != current_user.id, User.latitude.isnot(None), User.longitude.isnot(None)).all()
+    nearby_ids = []
+    for user in users:
+        dist = haversine(current_user.latitude, current_user.longitude, user.latitude, user.longitude)
+        if dist <= radius:
+            nearby_ids.append(user.id)
+    return jsonify({'nearby_user_ids': nearby_ids})

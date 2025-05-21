@@ -4,6 +4,7 @@ from app import db
 import jwt
 import datetime
 from functools import wraps
+from datetime import date, timedelta
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -43,9 +44,21 @@ def login():
     data = request.get_json()
     user = User.query.filter_by(username=data.get('username')).first()
     if user and user.check_password(data.get('password')):
+        update_streak(user)
+        db.session.commit()
         token = jwt.encode({
             'user_id': user.id,
             'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
         }, current_app.config['SECRET_KEY'], algorithm="HS256")
         return jsonify({'token': token})
     return jsonify({'message': 'Invalid credentials'}), 401
+
+def update_streak(user):
+    today = date.today()
+    if user.last_streak_date == today:
+        return  # Already updated today
+    elif user.last_streak_date == today - timedelta(days=1):
+        user.streak += 1
+    else:
+        user.streak = 1
+    user.last_streak_date = today
