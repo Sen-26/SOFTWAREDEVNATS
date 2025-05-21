@@ -15,6 +15,7 @@ class User(db.Model):
     last_streak_date = db.Column(db.Date, nullable=True)
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
+    quests = db.Column(MutableList.as_mutable(db.ARRAY(db.Integer)), default=lambda: [0]*12)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
