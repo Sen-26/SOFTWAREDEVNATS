@@ -1,17 +1,18 @@
 // app/edit-avatar.tsx
-import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Buffer } from 'buffer';
+import * as ImagePicker from 'expo-image-picker';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
   Button,
   Image,
   StyleSheet,
-  Alert,
-  ActivityIndicator,
   TouchableOpacity,
+  View
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
 // import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from './_layout';
@@ -25,11 +26,32 @@ export default function EditAvatarScreen() {
   const [previewUri, setPreviewUri] = useState(null);
   const { token } = useAuth();
 
-  useEffect(() => {
-    AsyncStorage.getItem(AVATAR_KEY).then(uri => {
-      if (uri) setPreviewUri(uri);
-    });
-  }, []);
+  useFocusEffect(
+      useCallback(() => {
+        fetch(`${API_BASE}/users/me`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        })
+          .then(res => res.json())
+          .then(data => {
+            const endpoint = `${API_BASE}/users/${data.id}/avatar?t=${Date.now()}`;
+          // Fetch raw image bytes and convert to base64 data URI
+          fetch(endpoint, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+            .then(res => res.arrayBuffer())
+            .then(buffer => {
+              const b64 = Buffer.from(buffer).toString('base64');
+              setPreviewUri(`data:image/png;base64,${b64}`);
+            })
+            .catch(console.error);
+          })
+          .catch(console.error);
+      }, [token])
+    );
 
   const pickImage = async () => {
     setLoading(true);
@@ -130,10 +152,17 @@ export default function EditAvatarScreen() {
       >
         <Ionicons name="close" size={28} color="#333" />
       </TouchableOpacity>
-      {loading && <ActivityIndicator size="large" color="#007bff" />}
-      {previewUri && (
-         <Image source={{ uri: previewUri }} style={styles.preview} />
-      )}
+       {!previewUri && (
+                      <ActivityIndicator size="large" color="#007bff" style={styles.avatarLoader} />
+                    )}
+                    {previewUri ? (
+                      <Image source={{ uri: previewUri }} style={styles.preview} />
+                    ) : (
+                      <Image
+                        source={require('../assets/avatar-placeholder.jpg')}
+                        style={styles.preview}
+                      />
+                    )}
       <View style={styles.buttonRow}>
         <Button title="Choose from Library" onPress={pickImage} />
         <Button title="Take Photo" onPress={takePhoto} />
