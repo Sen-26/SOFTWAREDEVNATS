@@ -22,7 +22,7 @@ import { LineChart } from 'react-native-chart-kit';
 
 const AVATAR_KEY = '@user_avatar';
 const { width } = Dimensions.get('window');
-
+const bannerStyles = {banner_1: null, banner_2: 'https://i.ibb.co/7J5WR0xL/trash-banner-1.png'};
 export default function Profile() {
   const router = useRouter();
 
@@ -152,6 +152,7 @@ export default function Profile() {
               return {
                 id,
                 username: data.username,
+                banner: bannerStyles[data.equipped_items.find(item => item.startsWith("banner_")) || "banner_1"],
                 trash_collected: data.trash_collected || 0,
                 avatarUri,
                 isMe: id === meId,
@@ -378,23 +379,103 @@ export default function Profile() {
           ) : (
             <ScrollView style={{ width: '100%' }} contentContainerStyle={{ paddingVertical: 10 }}>
               {leaderboard.map((user, idx) => (
-                <View key={user.id} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: user.isMe ? '#D1E7FF' : '#F7FAFC', borderRadius: 12, padding: 16, marginBottom: 14, shadowColor: '#000', shadowOpacity: 0.05, shadowOffset: { width: 0, height: 2 }, shadowRadius: 8, elevation: 2 }}>
-                  <View style={{ marginRight: 16 }}>
-                    {user.avatarUri ? (
-                      <Image source={{ uri: user.avatarUri }} style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: '#007bff', backgroundColor: '#EEE' }} />
-                    ) : (
-                      <Image source={require('../assets/avatar-placeholder.jpg')} style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: '#007bff', backgroundColor: '#EEE' }} />
-                    )}
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 18, fontWeight: user.isMe ? 'bold' : '600', color: user.isMe ? '#007bff' : '#333' }}>{user.username || 'Unknown'}{user.isMe ? ' (You)' : ''}</Text>
-                    <Text style={{ fontSize: 14, color: '#2C7A7B', marginTop: 2 }}>{user.trash_collected} items</Text>
-                  </View>
-                  <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#007bff', justifyContent: 'center', alignItems: 'center', marginLeft: 10 }}>
-                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{idx + 1}</Text>
-                  </View>
-                </View>
-              ))}
+  <View
+    key={user.id}
+    style={[
+      styles.sectionCard,
+      {
+        marginBottom: 14,
+        padding: 0,
+        overflow: 'hidden',
+        backgroundColor: user.banner ? 'transparent' : '#fff',
+      },
+    ]}
+  >
+    {/* Banner Background (if any) */}
+    {user.banner && (
+      <Image
+        source={{ uri: user.banner }}
+        style={{
+          ...StyleSheet.absoluteFillObject,
+          resizeMode: 'cover',
+        }}
+      />
+    )}
+
+    {/* Dark overlay to enhance text readability */}
+    {user.banner && (
+      <View
+        style={{
+          ...StyleSheet.absoluteFillObject,
+          backgroundColor: 'rgba(0,0,0,0.3)',
+        }}
+      />
+    )}
+
+    {/* Content */}
+    <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
+      {/* Avatar */}
+      <View style={{ marginRight: 16 }}>
+        <Image
+          source={
+            user.avatarUri
+              ? { uri: user.avatarUri }
+              : require('../assets/avatar-placeholder.jpg')
+          }
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            borderWidth: 2,
+            borderColor: '#007bff',
+            backgroundColor: '#EEE',
+          }}
+        />
+      </View>
+
+      {/* User Info */}
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            fontSize: 18,
+            fontWeight: user.isMe ? 'bold' : '600',
+            color: user.banner ? '#fff' : '#333',
+          }}
+        >
+          {user.username || 'Unknown'} {user.isMe ? '(You)' : ''}
+        </Text>
+        <Text
+          style={{
+            fontSize: 14,
+            color: user.banner ? '#e2e8f0' : '#2C7A7B',
+            marginTop: 2,
+          }}
+        >
+          {user.trash_collected} items
+        </Text>
+      </View>
+
+      {/* Rank Number */}
+      <View
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          backgroundColor: '#007bff',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginLeft: 10,
+        }}
+      >
+        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
+          {idx + 1}
+        </Text>
+      </View>
+    </View>
+  </View>
+))}
+
+
             </ScrollView>
           )
         )}

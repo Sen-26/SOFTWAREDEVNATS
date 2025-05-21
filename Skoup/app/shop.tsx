@@ -136,7 +136,7 @@ export default function ShopPage() {
 
       name: 'banner_1',
       cost: 0,
-      image: 'https://i.imgur.com/1Jp3Q7a.png',
+      image: 'S',
     },
     {
       id: '6',
@@ -144,7 +144,7 @@ export default function ShopPage() {
 
       name: 'banner_2',
       cost: 400,
-      image: 'https://i.imgur.com/1Jp3Q7a.png',
+      image: 'https://i.ibb.co/7J5WR0xL/trash-banner-1.png',
     },
   ];
   const [userCoin, setUserCoin] = useState(0);

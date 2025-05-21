@@ -22,7 +22,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
+  
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Missing Fields', 'Please enter both email and password.');
