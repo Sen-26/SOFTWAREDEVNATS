@@ -59,7 +59,7 @@ export default function ShopPage() {
       <View style={styles.content}>
         <View style={styles.streakCard}>
           <View style={styles.streakCircle}>
-            <Text style={styles.streakNumber}>7</Text>
+            <Text style={styles.streakNumber}>{userStreak}</Text>
           </View>
           <Text style={styles.streakLabel}>DAY STREAK</Text>
         </View>
@@ -101,42 +101,54 @@ export default function ShopPage() {
   const shopItems = [
     {
       id: '1',
+      displayName: 'Default Map',
       name: 'map_1',
-      cost: 1,
+      cost: 0,
       image: 'https://i.imgur.com/OY1T8KX.png',
     },
     {
       id: '2',
+      displayName: 'Desert Adventure Map',
+
       name: 'map_2',
-      cost: 1,
+      cost: 30,
       image: 'https://i.imgur.com/BT0Q3qT.png',
     },
     {
       id: '3',
+      displayName: 'Midnight Map',
+
       name: 'map_3',
       cost: 150,
       image: 'https://i.imgur.com/3V6JjNy.png',
     },
     {
       id: '4',
+      displayName: 'Lime Green Map',
+
       name: 'map_4',
       cost: 120,
       image: 'https://i.imgur.com/1Jp3Q7a.png',
     },
     {
       id: '5',
+      displayName: 'Default Banner',
+
       name: 'banner_1',
-      cost: 2,
+      cost: 0,
       image: 'https://i.imgur.com/1Jp3Q7a.png',
     },
     {
       id: '6',
+      displayName: 'Trash Warrior Banner',
+
       name: 'banner_2',
-      cost: 2,
+      cost: 400,
       image: 'https://i.imgur.com/1Jp3Q7a.png',
     },
   ];
   const [userCoin, setUserCoin] = useState(0);
+  const [userStreak, setUserStreak] = useState(0);
   const [unlockedItems, setUnlockedItems] = useState<string[]>([]);
   const {token} = useAuth(); // Replace with real token logic
   
@@ -153,6 +165,7 @@ export default function ShopPage() {
       setUserCoin(res.data.coin);
       setUnlockedItems(res.data.unlocked_items || []);
       setEquippedItems(res.data.equipped_items || []);
+      setUserStreak(res.data.streak);
     } catch (err) {
       console.error('Failed to fetch user data', err);
     }
@@ -222,7 +235,7 @@ export default function ShopPage() {
             return (
               <View style={styles.shopCard}>
                 <Image source={{ uri: item.image }} style={styles.shopImage} />
-                <Text style={styles.shopName}>{item.name}</Text>
+                <Text style={styles.shopName}>{item.displayName}</Text>
                 <Text style={styles.shopCost}>💎 {item.cost}</Text>
     
                 {owned ? (
