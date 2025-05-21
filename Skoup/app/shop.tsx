@@ -21,7 +21,7 @@ const apiURL = "http://192.168.193.45:5431/";
 type Tab = 'Challenges' | 'Streaks' | 'Achievements' | 'Shop';
 
 export default function ShopPage() {
-  const [selectedTab, setSelectedTab] = useState<Tab>('Challenges');
+  const [selectedTab, setSelectedTab] = useState<Tab>('Shop');
 
   const renderChallenges = () => (
     <SafeAreaView>
@@ -104,7 +104,7 @@ export default function ShopPage() {
       displayName: 'Default Map',
       name: 'map_1',
       cost: 0,
-      image: 'https://i.imgur.com/OY1T8KX.png',
+      image: 'https://snazzy-maps-cdn.azureedge.net/assets/2-midnight-commander.png?v=20170626082819',
     },
     {
       id: '2',
@@ -112,7 +112,7 @@ export default function ShopPage() {
 
       name: 'map_2',
       cost: 30,
-      image: 'https://i.imgur.com/BT0Q3qT.png',
+      image: 'https://snazzy-maps-cdn.azureedge.net/assets/93-lost-in-the-desert.png?v=20170626082912',
     },
     {
       id: '3',
@@ -120,7 +120,7 @@ export default function ShopPage() {
 
       name: 'map_3',
       cost: 150,
-      image: 'https://i.imgur.com/3V6JjNy.png',
+      image: 'https://snazzy-maps-cdn.azureedge.net/assets/19883-midnight-minimal.png?v=20170626043955',
     },
     {
       id: '4',
@@ -128,7 +128,7 @@ export default function ShopPage() {
 
       name: 'map_4',
       cost: 120,
-      image: 'https://i.imgur.com/1Jp3Q7a.png',
+      image: 'https://snazzy-maps-cdn.azureedge.net/assets/24149-hud-display.png?v=20170626033743',
     },
     {
       id: '5',
@@ -386,12 +386,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    // iOS shadow
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
-    // Android
     elevation: 3,
   },
   cardHeader: {
@@ -411,6 +409,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 
+  // Streak card…
   streakCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -455,8 +454,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     width: (width - 48) / 2,
     margin: 8,
-    padding: 12,
-    alignItems: 'center',
+    overflow: 'hidden',      // ensures rounded corners clip the image
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
@@ -464,10 +462,13 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   shopImage: {
-    width: 64,
-    height: 64,
-    resizeMode: 'contain',
-    marginBottom: 12,
+    width: '100%',
+    aspectRatio: 1,         // makes it square
+    resizeMode: 'cover',    // fills the area
+  },
+  shopContent: {
+    padding: 12,            // content under the image
+    alignItems: 'center',
   },
   shopName: {
     fontSize: 16,
@@ -557,5 +558,3 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
-
-
