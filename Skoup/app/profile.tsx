@@ -43,6 +43,10 @@ export default function Profile() {
   const [monthlyCounts, setMonthlyCounts] = useState<number[]>([]);
   const { level, progress, goal } = getLevelAndProgress(trashCollected);
 
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
+
   function getLevelAndProgress(trashCollected: number) {
     const level = Math.floor(trashCollected / 50) + 1;
     const goal = level * 50;
@@ -85,7 +89,7 @@ export default function Profile() {
     }, [token])
   );
 
-  const [selectedTab, setSelectedTab] = useState<'Me' | 'Friends'>('Me');
+  const [selectedTab, setSelectedTab] = useState<'Me' | 'Leaderboard'>('Me');
   const [tag, setTag] = useState<string>('');
   useEffect(() => {
     const randomTag = Math.random()
@@ -94,6 +98,80 @@ export default function Profile() {
       .toUpperCase();
     setTag('#' + randomTag);
   }, []);
+
+  useEffect(() => {
+    if (selectedTab !== 'Leaderboard') return;
+    setLoadingLeaderboard(true);
+    setLeaderboardError(null);
+    setLeaderboard([]);
+    fetch(`${API_BASE}/users/nearby`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ radius: 1 }),
+    })
+      .then(res => res.json())
+      .then(async (resp: { nearby_user_ids: string[] }) => {
+        let ids = resp.nearby_user_ids || [];
+        // Always include the current user
+        let meId = null;
+        try {
+          const meRes = await fetch(`${API_BASE}/users/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const meData = await meRes.json();
+          meId = meData.id;
+          if (meId && !ids.includes(meId)) ids = [meId, ...ids];
+        } catch {}
+        if (!Array.isArray(ids) || ids.length === 0) {
+          setLeaderboard([]);
+          setLoadingLeaderboard(false);
+          return;
+        }
+        // Fetch all user profiles in parallel
+        const userProfiles = await Promise.all(
+          ids.map(async id => {
+            try {
+              const res = await fetch(`${API_BASE}/users/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              const data = await res.json();
+              // Fetch avatar
+              let avatarUri = '';
+              try {
+                const avatarRes = await fetch(`${API_BASE}/users/${id}/avatar?t=${Date.now()}`, {
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                if (avatarRes.ok) {
+                  const buffer = await avatarRes.arrayBuffer();
+                  avatarUri = `data:image/png;base64,${Buffer.from(buffer).toString('base64')}`;
+                }
+              } catch {}
+              return {
+                id,
+                username: data.username,
+                trash_collected: data.trash_collected || 0,
+                avatarUri,
+                isMe: id === meId,
+              };
+            } catch {
+              return null;
+            }
+          })
+        );
+        // Filter out nulls and sort by trash_collected desc
+        const sorted = userProfiles.filter(Boolean).sort((a, b) => (b!.trash_collected - a!.trash_collected));
+        setLeaderboard(sorted as any[]);
+        setLoadingLeaderboard(false);
+      })
+      .catch(() => {
+        setLeaderboard([]);
+        setLeaderboardError('Failed to load leaderboard.');
+        setLoadingLeaderboard(false);
+      });
+  }, [selectedTab, token]);
 
   const PIECE_WEIGHT_KG = 0.05;
   const CO2_PER_KG = 2.5;
@@ -152,7 +230,7 @@ export default function Profile() {
       >
         {/* Tabs */}
         <View style={styles.tabContainer}>
-          {(['Me', 'Friends'] as const).map(tab => (
+          {(['Me', 'Leaderboard'] as const).map(tab => (
             <TouchableOpacity
               key={tab}
               style={[styles.tab, selectedTab === tab && styles.activeTab]}
@@ -291,9 +369,34 @@ export default function Profile() {
             </View>
           </View>
         ) : (
-          <View style={[styles.leaderBoardSection, styles.sectionCard]}>
-            <Text style={styles.genericText}>Friend list goes here</Text>
-          </View>
+          loadingLeaderboard ? (
+            <ActivityIndicator size="large" color="#007bff" style={{ marginTop: 30 }} />
+          ) : leaderboardError ? (
+            <Text style={styles.genericText}>{leaderboardError}</Text>
+          ) : leaderboard.length === 0 ? (
+            <Text style={styles.genericText}>No nearby users found.</Text>
+          ) : (
+            <ScrollView style={{ width: '100%' }} contentContainerStyle={{ paddingVertical: 10 }}>
+              {leaderboard.map((user, idx) => (
+                <View key={user.id} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: user.isMe ? '#D1E7FF' : '#F7FAFC', borderRadius: 12, padding: 16, marginBottom: 14, shadowColor: '#000', shadowOpacity: 0.05, shadowOffset: { width: 0, height: 2 }, shadowRadius: 8, elevation: 2 }}>
+                  <View style={{ marginRight: 16 }}>
+                    {user.avatarUri ? (
+                      <Image source={{ uri: user.avatarUri }} style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: '#007bff', backgroundColor: '#EEE' }} />
+                    ) : (
+                      <Image source={require('../assets/avatar-placeholder.jpg')} style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: '#007bff', backgroundColor: '#EEE' }} />
+                    )}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 18, fontWeight: user.isMe ? 'bold' : '600', color: user.isMe ? '#007bff' : '#333' }}>{user.username || 'Unknown'}{user.isMe ? ' (You)' : ''}</Text>
+                    <Text style={{ fontSize: 14, color: '#2C7A7B', marginTop: 2 }}>{user.trash_collected} items</Text>
+                  </View>
+                  <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#007bff', justifyContent: 'center', alignItems: 'center', marginLeft: 10 }}>
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{idx + 1}</Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          )
         )}
       </ScrollView>
 
