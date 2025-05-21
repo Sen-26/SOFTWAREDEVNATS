@@ -23,7 +23,9 @@ import { useAuth } from './_layout';
 
 const apiURL = "http://192.168.193.45:5431/";
 
-const darkMapStyle = [
+const mapStyles = { 
+  map_1: 
+  [
     {
         "featureType": "all",
         "elementType": "labels.text.fill",
@@ -159,110 +161,83 @@ const darkMapStyle = [
             }
         ]
     }
-];5
-const lightMapStyle = [
+],
+map_2: 
+
+[
     {
-        "featureType": "all",
-        "elementType": "labels.text.fill",
+        "elementType": "labels",
         "stylers": [
             {
-                "color": "#ffffff"
-            }
-        ]
-    },
-    {
-        "featureType": "all",
-        "elementType": "labels.text.stroke",
-        "stylers": [
-            {
-                "color": "#000000"
+                "visibility": "off"
             },
             {
-                "lightness": 13
-            }
-        ]
-    },
-    {
-        "featureType": "administrative",
-        "elementType": "geometry.fill",
-        "stylers": [
-            {
-                "color": "#000000"
-            }
-        ]
-    },
-    {
-        "featureType": "administrative",
-        "elementType": "geometry.stroke",
-        "stylers": [
-            {
-                "color": "#144b53"
-            },
-            {
-                "lightness": 14
-            },
-            {
-                "weight": 1.4
+                "color": "#f49f53"
             }
         ]
     },
     {
         "featureType": "landscape",
-        "elementType": "all",
         "stylers": [
             {
-                "color": "#08304b"
-            }
-        ]
-    },
-    {
-        "featureType": "poi",
-        "elementType": "geometry",
-        "stylers": [
-            {
-                "color": "#0c4152"
+                "color": "#f9ddc5"
             },
             {
-                "lightness": 5
+                "lightness": -7
             }
         ]
     },
     {
-        "featureType": "road.highway",
+        "featureType": "road",
+        "stylers": [
+            {
+                "color": "#813033"
+            },
+            {
+                "lightness": 43
+            }
+        ]
+    },
+    {
+        "featureType": "poi.business",
+        "stylers": [
+            {
+                "color": "#645c20"
+            },
+            {
+                "lightness": 38
+            }
+        ]
+    },
+    {
+        "featureType": "water",
+        "stylers": [
+            {
+                "color": "#1994bf"
+            },
+            {
+                "saturation": -69
+            },
+            {
+                "gamma": 0.99
+            },
+            {
+                "lightness": 43
+            }
+        ]
+    },
+    {
+        "featureType": "road.local",
         "elementType": "geometry.fill",
         "stylers": [
             {
-                "color": "#000000"
-            }
-        ]
-    },
-    {
-        "featureType": "road.highway",
-        "elementType": "geometry.stroke",
-        "stylers": [
-            {
-                "color": "#0b434f"
+                "color": "#f19f53"
             },
             {
-                "lightness": 25
-            }
-        ]
-    },
-    {
-        "featureType": "road.arterial",
-        "elementType": "geometry.fill",
-        "stylers": [
+                "weight": 1.3
+            },
             {
-                "color": "#000000"
-            }
-        ]
-    },
-    {
-        "featureType": "road.arterial",
-        "elementType": "geometry.stroke",
-        "stylers": [
-            {
-                "color": "#0b3d51"
+                "visibility": "on"
             },
             {
                 "lightness": 16
@@ -270,33 +245,130 @@ const lightMapStyle = [
         ]
     },
     {
-        "featureType": "road.local",
-        "elementType": "geometry",
+        "featureType": "poi.business"
+    },
+    {
+        "featureType": "poi.park",
         "stylers": [
             {
-                "color": "#000000"
+                "color": "#645c20"
+            },
+            {
+                "lightness": 39
+            }
+        ]
+    },
+    {
+        "featureType": "poi.school",
+        "stylers": [
+            {
+                "color": "#a95521"
+            },
+            {
+                "lightness": 35
+            }
+        ]
+    },
+    {},
+    {
+        "featureType": "poi.medical",
+        "elementType": "geometry.fill",
+        "stylers": [
+            {
+                "color": "#813033"
+            },
+            {
+                "lightness": 38
+            },
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {
+        "elementType": "labels"
+    },
+    {
+        "featureType": "poi.sports_complex",
+        "stylers": [
+            {
+                "color": "#9e5916"
+            },
+            {
+                "lightness": 32
+            }
+        ]
+    },
+    {},
+    {
+        "featureType": "poi.government",
+        "stylers": [
+            {
+                "color": "#9e5916"
+            },
+            {
+                "lightness": 46
+            }
+        ]
+    },
+    {
+        "featureType": "transit.station",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "transit.line",
+        "stylers": [
+            {
+                "color": "#813033"
+            },
+            {
+                "lightness": 22
             }
         ]
     },
     {
         "featureType": "transit",
-        "elementType": "all",
         "stylers": [
             {
-                "color": "#146474"
+                "lightness": 38
             }
         ]
     },
     {
-        "featureType": "water",
-        "elementType": "all",
+        "featureType": "road.local",
+        "elementType": "geometry.stroke",
         "stylers": [
             {
-                "color": "#021019"
+                "color": "#f19f53"
+            },
+            {
+                "lightness": -10
             }
         ]
-    }
-];
+    },
+    {},
+    {},
+    {}
+]
+
+
+
+};
 
 const AVATAR_KEY = '@user_avatar';
 const COIN_KEY = '@user_coins';
@@ -307,6 +379,8 @@ export default function HomePage() {
     const { token } = useAuth();
     const [progressCount, setProgressCount] = useState<number>(0);
     const [trashCollected, setTrashCollected] = useState<number>(0);
+    const [equippedItems, setEquippedItems] = useState<string[]>([]);
+
     const insets = useSafeAreaInsets();
     // Animated width from 0→percent
     const progressAnim = useRef(new Animated.Value(0)).current;
@@ -336,6 +410,10 @@ export default function HomePage() {
             .catch(console.error);
           if (data.username) setUserName(data.username);
             // update coin in AsyncStorage for progress calc
+            setEquippedItems(data.equipped_items || []);
+            console.log(data.equipped_items)
+            const mapKey = data.equipped_items.find(item => item.startsWith("map_")) || "map_1";
+            setMapStyle(mapStyles[mapKey]);
             if (typeof data.coin === 'number') {
               AsyncStorage.setItem(COIN_KEY, data.coin.toString());
               const pieces = Math.floor(data.coin / 2);
@@ -364,7 +442,7 @@ export default function HomePage() {
   
     // Map state
     const [region, setRegion] = useState<any>(null);
-    const [mapStyle, setMapStyle] = useState(darkMapStyle);
+    const [mapStyle, setMapStyle] = useState(mapStyles["map_1"]);
     const [infoVisible, setInfoVisible] = useState(false);
     const slideAnim = useRef(new Animated.Value(-120)).current;
 
@@ -597,7 +675,7 @@ export default function HomePage() {
         </View>
       );
     }
-
+    
     // MAIN MAP + UI
     return (
       <View style={styles.container}>
