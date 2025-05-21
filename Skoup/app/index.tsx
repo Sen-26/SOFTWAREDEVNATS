@@ -3,7 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,7 +14,11 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ImageBackground,
+  Easing,
 } from 'react-native';
+import { Platform, StatusBar } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import { useAuth } from './_layout';
 
@@ -302,6 +307,51 @@ const userName = 'Pranav';
 export default function HomePage() {
     const router = useRouter();
     const { token } = useAuth();
+    const [progressCount, setProgressCount] = useState<number>(0);
+    const [trashCollected, setTrashCollected] = useState<number>(0);
+    const insets = useSafeAreaInsets();
+    // Animated width from 0→percent
+    const progressAnim = useRef(new Animated.Value(0)).current;
+
+    // Load cumulative trash progress (e.g. pieces towards next 50-piece award)
+    useFocusEffect(
+      useCallback(() => {
+        // Fetch user profile (coin & trash) on focus
+        fetch(`${apiURL}users/me`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        })
+          .then(res => res.json())
+          .then(data => {
+            // update coin in AsyncStorage for progress calc
+            if (typeof data.coin === 'number') {
+              AsyncStorage.setItem(COIN_KEY, data.coin.toString());
+              const pieces = Math.floor(data.coin / 2);
+              setProgressCount(Math.min(pieces, 50));
+            }
+            // update trash count
+            if (typeof data.trash_collected === 'number') {
+              setTrashCollected(data.trash_collected);
+            }
+          })
+          .catch(console.error);
+      }, [token])
+    );
+
+
+    // Animate when progressCount changes
+    useEffect(() => {
+      const pct = (progressCount / 50) * 100;
+      Animated.timing(progressAnim, {
+        toValue: pct,
+        duration: 800,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+      }).start();
+    }, [progressCount]);
   
     // Map state
     const [region, setRegion] = useState<any>(null);
@@ -329,7 +379,7 @@ export default function HomePage() {
     // Camera permission + ref
     const [permission, requestPermission] = useCameraPermissions();
     const cameraRef = useRef<CameraView>(null);
-  
+
     // NEW: toggle camera view
     const [cameraVisible, setCameraVisible] = useState(false);
 
@@ -358,6 +408,19 @@ export default function HomePage() {
         const current = parseInt((await AsyncStorage.getItem(COIN_KEY)) || '0', 10);
         const tokens = count * 2;
         const updated = current + tokens;
+        // Update server trash count and read back the new total
+        const resp = await fetch(`${apiURL}users/me/trash_collected`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ amount: count }),
+        });
+        const json = await resp.json();
+        if (typeof json.trash_collected === 'number') {
+          setTrashCollected(json.trash_collected);
+        }
         await AsyncStorage.setItem(COIN_KEY, updated.toString());
         setTokensEarned(tokens);
       } catch (err) {
@@ -453,7 +516,7 @@ export default function HomePage() {
         </View>
       );
     }
-  
+
     if (!region) {
       return (
         <View style={styles.loading}>
@@ -461,7 +524,7 @@ export default function HomePage() {
         </View>
       );
     }
-  
+
     // SHOW CAMERA PREVIEW IF ACTIVE
     if (cameraVisible && permission?.granted) {
       return (
@@ -488,8 +551,6 @@ export default function HomePage() {
       );
     }
 
-    // (sidebarWidth, menuVisible, menuAnim, toggleMenu moved above)
-  
     // MAIN MAP + UI
     return (
       <View style={styles.container}>
@@ -524,36 +585,51 @@ export default function HomePage() {
           <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
             <Entypo name="menu" size={28} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.infoButton}
-            onPress={() => {
-              const toValue = infoVisible ? -120 : 0;
-              Animated.timing(slideAnim, {
-                toValue,
-                duration: 300,
-                useNativeDriver: true,
-              }).start();
-              setInfoVisible(v => !v);
-            }}
+          <ImageBackground
+            source={require('../assets/ui/progress_panel.png')}
+            style={[
+              styles.progressPanel,
+              { top: insets.top - 45, right: insets.right - 10 },
+            ]}
+            imageStyle={styles.progressPanelImage}
           >
-            <Ionicons
-              name="information-circle-outline"
-              size={28}
-              color="white"
-            />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.progressSlider}
+              activeOpacity={0.8}
+              onPress={() => router.push('/progression')}
+            >
+
+              {/* Header (removed progress count text) */}
+              <View style={styles.progressHeader}>
+                {/* Progress count text removed */}
+              </View>
+
+              {/* Progress bar: dark grey track, orange fill */}
+              <Text style={styles.trashCollectedOverlay}>
+                {trashCollected}
+                <Text style={styles.trashCollectedItems}> items</Text>
+              </Text>
+              <View style={styles.progressBarBackground}>
+                <Animated.View
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      width: progressAnim.interpolate({
+                        inputRange: [0, 100],
+                        outputRange: ['0%', '100%'],
+                      }),
+                    },
+                  ]}
+                />
+                <Image
+                  source={require('../assets/ui/coin.png')}
+                  style={styles.nextRewardIcon}
+                />
+              </View>
+            </TouchableOpacity>
+          </ImageBackground>
         </View>
         )}
-
-        {/* Info Panel */}
-        <Animated.View
-          style={[
-            styles.infoPanel,
-            { transform: [{ translateY: slideAnim }] },
-          ]}
-        >
-          <Text style={styles.infoText}>This map shows areas with high risk of trash pollution. Toggle the EPA data layer to see high-risk areas.</Text>
-        </Animated.View>
 
         {/* Dropdown Menu */}
         {menuVisible && (
@@ -983,5 +1059,84 @@ export default function HomePage() {
     legendText: {
       fontSize: 12,
     },   
+    // Themed panel parent
+    progressPanel: {
+      position: 'absolute',
+      zIndex: 20,
+      width: 240,
+      height: 100,
+      padding: 8,
+      backgroundColor: 'transparent',
+      overflow: 'hidden',
+    },
+    progressPanelImage: {
+      resizeMode: 'stretch',
+      borderRadius: 12,
+    },
+    progressSlider: {
+      flex: 1,
+      justifyContent: 'space-between',
+    },
+    decorationLeft: {
+      position: 'absolute',
+      top: 6,
+      left: 6,
+    },
+    decorationRight: {
+      position: 'absolute',
+      top: 6,
+      right: 6,
+    },
+    progressHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    progressCount: {
+      color: '#FFD700',
+      marginLeft: 8,
+      fontSize: 14,
+    },
+    progressBarBackground: {
+      width: '95%',
+      height: 25,
+      borderRadius: 12, // fully round corners
+      backgroundColor: '#2e2e2e',  // very dark grey for unfilled bar
+      overflow: 'visible',   // allow coin to overflow
+      marginTop: 8,
+    },
+    progressBarFill: {
+      height: '100%',
+      backgroundColor: '#FFA500',
+      borderRadius: 12,
+    },
+    nextRewardIcon: {
+      position: 'absolute',
+      right: -13,        // shift icon to overlap end of bar
+      top: '50%',
+      marginTop: -18,    // center icon vertically over bar (half of height)
+      width: 34,         // larger icon size
+      height: 34,
+      borderRadius: 25,  // match half of width/height
+      zIndex: 5,
+    },
+    // Overlay for trash collected number on progress bar
+    trashCollectedOverlay: {
+      position: 'absolute',
+      top: '17%',       // moved up
+      right: '20%',     // shifted to the right
+      fontSize: 26,     // larger text
+      fontWeight: 'bold',
+      color: '#FFA500', // orange
+      zIndex: 2,
+    },
+    // Smaller “items” text next to trash count
+    trashCollectedItems: {
+      fontSize: 16,       // smaller than the main number
+      fontWeight: 'normal',
+      color: '#FFA500',   // match the orange color
+    },
 
 });
+
+    
