@@ -248,8 +248,8 @@ export default function ShopPage() {
               <View style={styles.shopCard}>
                 <Image source={{ uri: item.image }} style={styles.shopImage} />
                 <Text style={styles.shopName}>{item.displayName}</Text>
-                <Text style={styles.shopCost}>💎 {item.cost}</Text>
-
+                <Text style={styles.shopCost}>💰 {item.cost}</Text>
+    
                 {owned ? (
                   equipped ? (
                     <View style={styles.equippedBadge}>
