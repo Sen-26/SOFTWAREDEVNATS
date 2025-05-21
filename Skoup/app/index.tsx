@@ -313,10 +313,9 @@ export default function HomePage() {
     // Animated width from 0→percent
     const progressAnim = useRef(new Animated.Value(0)).current;
 
-    // Load cumulative trash progress (e.g. pieces towards next 50-piece award)
+    // Refresh profile data on screen focus
     useFocusEffect(
       useCallback(() => {
-        // Fetch user profile (coin & trash) on focus
         fetch(`${apiURL}users/me`, {
           method: 'GET',
           headers: {
@@ -407,7 +406,6 @@ export default function HomePage() {
         // compute tokens based on returned count
         const current = parseInt((await AsyncStorage.getItem(COIN_KEY)) || '0', 10);
         const tokens = count * 2;
-        const updated = current + tokens;
         // Update server trash count and read back the new total
         const resp = await fetch(`${apiURL}users/me/trash_collected`, {
           method: 'POST',
@@ -421,7 +419,19 @@ export default function HomePage() {
         if (typeof json.trash_collected === 'number') {
           setTrashCollected(json.trash_collected);
         }
-        await AsyncStorage.setItem(COIN_KEY, updated.toString());
+        // Update server-side coin balance
+        const coinResp = await fetch(`${apiURL}users/me/coin`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ amount: tokens }),
+        });
+        const coinJson = await coinResp.json();
+        if (typeof coinJson.coin === 'number') {
+          await AsyncStorage.setItem(COIN_KEY, coinJson.coin.toString());
+        }
         setTokensEarned(tokens);
       } catch (err) {
         console.error('Upload or processing failed', err);
@@ -596,7 +606,7 @@ export default function HomePage() {
             <TouchableOpacity
               style={styles.progressSlider}
               activeOpacity={0.8}
-              onPress={() => router.push('/quests')}}
+              onPress={() => router.push('/quests')}
             >
 
               {/* Header (removed progress count text) */}

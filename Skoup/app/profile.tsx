@@ -10,19 +10,19 @@ import {
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Entypo } from '@expo/vector-icons';
+import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from './_layout';
 import { Buffer } from 'buffer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE = 'http://192.168.193.45:5431'; // Update with your server address
 
 import { LineChart } from 'react-native-chart-kit';
 
 const AVATAR_KEY = '@user_avatar';
-const COIN_KEY = '@user_coins';
 const { width } = Dimensions.get('window');
 
 export default function Profile() {
@@ -30,6 +30,7 @@ export default function Profile() {
 
   const [menuVisible, setMenuVisible] = useState(false);
   const toggleMenu = () => setMenuVisible(v => !v);
+  
 
   // User profile state
   const { token } = useAuth();
@@ -37,6 +38,7 @@ export default function Profile() {
   const [profileName, setProfileName] = useState<string>('');
 
   const [coins, setCoins] = useState<number>(0);
+  const [trashCollected, setTrashCollected] = useState<number>(0);
 
   const [dailyCounts, setDailyCounts] = useState<number[]>([]);
   const [weeklyCounts, setWeeklyCounts] = useState<number[]>([]);
@@ -61,11 +63,17 @@ export default function Profile() {
             })
             .catch(console.error);
           if (data.username) setProfileName(data.username);
+          // Update coin count
+          if (typeof data.coin === 'number') {
+            setCoins(data.coin);
+          }
+          // Update trash collected count
+          if (typeof data.trash_collected === 'number') {
+            setTrashCollected(data.trash_collected);
+          }
         })
         .catch(console.error);
-      AsyncStorage.getItem(COIN_KEY).then(value => {
-        if (value) setCoins(parseInt(value, 10));
-      });
+      // Still load chart history from AsyncStorage
       AsyncStorage.getItem('@daily_history').then(v => setDailyCounts(v ? JSON.parse(v) : []));
       AsyncStorage.getItem('@weekly_history').then(v => setWeeklyCounts(v ? JSON.parse(v) : []));
       AsyncStorage.getItem('@monthly_history').then(v => setMonthlyCounts(v ? JSON.parse(v) : []));
@@ -166,7 +174,8 @@ export default function Profile() {
                 <Text style={styles.profileTag}>{tag}</Text>
               </View>
               <View style={styles.coinContainer}>
-                <Text style={styles.coinText}>💰 {coins}</Text>
+                <FontAwesome5 name="coins" size={20} color="#FFD700" />
+                <Text style={styles.coinText}>{coins}</Text>
               </View>
             </View>
 
@@ -337,6 +346,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     paddingHorizontal: 12,
     paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 20,
   },
   coinText: { fontSize: 16, color: '#333' },
