@@ -596,7 +596,7 @@ export default function HomePage() {
             <TouchableOpacity
               style={styles.progressSlider}
               activeOpacity={0.8}
-              onPress={() => router.push('/progression')}
+              onPress={() => router.push('/quests')}}
             >
 
               {/* Header (removed progress count text) */}
