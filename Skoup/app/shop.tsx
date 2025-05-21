@@ -25,7 +25,12 @@ export default function ShopPage() {
 
   const renderChallenges = () => (
     <SafeAreaView>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        horizontal={false}
+        showsHorizontalScrollIndicator={false}
+        alwaysBounceHorizontal={false}
+      >
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="sunny-outline" size={20} color="#007bff" />
@@ -72,7 +77,12 @@ export default function ShopPage() {
 
   const renderAchievements = () => (
     <SafeAreaView>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        horizontal={false}
+        showsHorizontalScrollIndicator={false}
+        alwaysBounceHorizontal={false}
+      >
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="trophy-outline" size={20} color="#007bff" />
@@ -220,10 +230,12 @@ export default function ShopPage() {
   
 
   const renderShop = () => (
-    <SafeAreaView>
-      <View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.shopWrapper}>
         <Text style={styles.coinDisplay}>💰 Coins: {userCoin}</Text>
         <FlatList
+          horizontal={false}
+          showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.content}
           data={shopItems}
           keyExtractor={item => item.id}
@@ -231,12 +243,12 @@ export default function ShopPage() {
           renderItem={({ item }) => {
             const owned = unlockedItems.includes(item.name); // Fix: check by name
             const equipped = equippedItems.includes(item.name);
-    
+
             return (
               <View style={styles.shopCard}>
                 <Image source={{ uri: item.image }} style={styles.shopImage} />
                 <Text style={styles.shopName}>{item.displayName}</Text>
-                <Text style={styles.shopCost}>💎 {item.cost}</Text>
+                <Text style={styles.shopCost}>💰 {item.cost}</Text>
     
                 {owned ? (
                   equipped ? (
@@ -376,8 +388,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingVertical: 20,
-    paddingHorizontal: 16,
-    paddingBottom: 80, // So content doesn't get hidden by tabs
+    alignItems: 'center',
+    paddingBottom: 120, // extra bottom padding for full scroll
   },
 
   // Cards
@@ -452,8 +464,8 @@ const styles = StyleSheet.create({
   shopCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    width: (width - 48) / 2,
-    margin: 8,
+    width: (width - 56) / 2, // slightly reduced width to avoid scroll
+    margin: 4,               // smaller side margins
     overflow: 'hidden',      // ensures rounded corners clip the image
     shadowColor: '#000',
     shadowOpacity: 0.05,
@@ -557,4 +569,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
   },
+  // Wrapper for Shop tab to center items
+  shopWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal:16,
+    paddingBottom: 40,  // extra space to scroll past last card
+  },
+
+  // Ensure SafeAreaView and wrapper expand fully
+  safeArea: {
+    flex: 1,
+  },
 });
+  
