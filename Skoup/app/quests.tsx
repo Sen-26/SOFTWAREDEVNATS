@@ -1,11 +1,7 @@
-// Quest completion thresholds (6 daily + 6 weekly)
 const QUEST_MAX = [5, 10, 15, 20, 25, 30, 50, 100, 150, 200, 250, 300];
 import React, { useState, useMemo } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 // AsyncStorage key for quest progress
-const QUESTS_KEY = '@user_quests';
-// AsyncStorage key for persisting claimed flags
-const CLAIMED_KEY = '@user_claimed_quests';
+// Removed AsyncStorage import and QUESTS_KEY as per instructions
 import {
   View,
   Text,
@@ -74,87 +70,48 @@ export default function QuestsPage() {
       })
         .then(res => res.json())
         .then(data => {
+          console.log('API /users/me response:', data);
           if (typeof data.coin === 'number') {
             setCoin(data.coin);
           }
         })
         .catch(console.error);
 
-      // Load latest quest progress from AsyncStorage
-      AsyncStorage.getItem(QUESTS_KEY)
-        .then(val => {
-          // parse stored array or default to empty
-          let arr: unknown;
-          try {
-            arr = JSON.parse(val || '[]');
-          } catch {
-            arr = [];
+      // Removed AsyncStorage progress load as per instructions
+
+      // Load claimed quest flags from server
+      fetch(`${apiURL}users/me`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log('API /users/me quests response:', data);
+          if (Array.isArray(data.quests)) {
+            const updatedFlags = Object.fromEntries(
+              [...dailyQuests, ...weeklyQuests].map((q, i) => [q.id, data.quests[i] === 1])
+            );
+            setClaimedMap(updatedFlags);
           }
-          // ensure valid length
-          const total = dailyQuests.length + weeklyQuests.length;
-          if (!Array.isArray(arr) || arr.length !== total) {
-            arr = Array(total).fill(0);
+          // Update quest progress based on total trash_collected
+          if (typeof data.trash_collected === 'number') {
+            const total = data.trash_collected;
+            const newProgress = Object.fromEntries(
+              [...dailyQuests, ...weeklyQuests].map(q => [
+                q.id,
+                Math.min(total, q.max),
+              ])
+            );
+            setProgressMap(newProgress);
           }
-          // map into id→progress
-          const updated = Object.fromEntries(
-            [...dailyQuests, ...weeklyQuests].map((q, i) => [q.id, (arr as number[])[i] ?? 0])
-          );
-          setProgressMap(updated as Record<string, number>);
-        })
-        .catch(console.error);
-      // Load claimed flags
-      AsyncStorage.getItem(CLAIMED_KEY)
-        .then(val => {
-          let arr: unknown;
-          try {
-            arr = JSON.parse(val || '[]');
-          } catch {
-            arr = [];
-          }
-          const total = dailyQuests.length + weeklyQuests.length;
-          if (!Array.isArray(arr) || arr.length !== total) {
-            arr = Array(total).fill(false);
-          }
-          const updatedFlags = Object.fromEntries(
-            [...dailyQuests, ...weeklyQuests].map((q, i) => [q.id, Boolean((arr as boolean[])[i])])
-          );
-          setClaimedMap(updatedFlags as Record<string, boolean>);
         })
         .catch(console.error);
     }, [token])
   );
 
-  // Called when user does an action to update progress
-  const handleProgress = async (questId: string) => {
-    try {
-      // compute updated progress map
-      setProgressMap(prev => {
-        const newCount = Math.min(
-          prev[questId] + 1,
-          [...dailyQuests, ...weeklyQuests].find(q => q.id === questId)!.max
-        );
-        const updatedMap = { ...prev, [questId]: newCount };
-        // Send full quest progress array to backend
-        fetch(`${apiURL}users/me/update-quests`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ quests: Object.values(updatedMap) }),
-        })
-          .then(res => res.json())
-          .then(data => {
-            // Optionally log or use the returned data.quests array
-            console.log('Updated quests:', data.quests);
-          })
-          .catch(console.error);
-        return updatedMap;
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   const handleClaim = async (questId: string) => {
     try {
@@ -175,11 +132,24 @@ export default function QuestsPage() {
           setCoin(json.coin);
         }
       }
-      // mark as claimed locally
-      setClaimedMap(prev => ({ ...prev, [questId]: true }));
-      // Persist claimed flags array
-      const flagsArray = Object.values({ ...claimedMap, [questId]: true });
-      AsyncStorage.setItem(CLAIMED_KEY, JSON.stringify(flagsArray))
+      // mark as claimed locally using a fresh map
+      const newMap = { ...claimedMap, [questId]: true };
+      setClaimedMap(newMap);
+      // Build flags array in quest order to send to server
+      const flagsArray = [...dailyQuests, ...weeklyQuests].map(q =>
+        newMap[q.id] ? 1 : 0
+      );
+
+      fetch(`${apiURL}users/me/update-quests`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ quests: flagsArray }),
+      })
+        .then(res => res.json())
+        .then(data => console.log('Claim flags updated:', data.quests))
         .catch(console.error);
     } catch (err) {
       console.error('Failed to claim reward', err);
@@ -237,7 +207,8 @@ export default function QuestsPage() {
               <TouchableOpacity
                 style={[
                   styles.claimButton,
-                  claimedMap[q.id] || progressMap[q.id] < q.max
+                  // disable if already claimed or progress not complete
+                  (claimedMap[q.id] || progressMap[q.id] < q.max)
                     ? styles.claimDisabled
                     : null,
                 ]}
@@ -287,7 +258,7 @@ export default function QuestsPage() {
               <TouchableOpacity
                 style={[
                   styles.claimButton,
-                  claimedMap[q.id] || progressMap[q.id] < q.max
+                  (claimedMap[q.id] || progressMap[q.id] < q.max)
                     ? styles.claimDisabled
                     : null,
                 ]}
