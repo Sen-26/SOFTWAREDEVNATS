@@ -10,9 +10,7 @@ import { Buffer } from 'buffer';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-// Represents a trash hotspot overlay
-type Hotspot = { latitude: number; longitude: number; radius: number };
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -1071,15 +1069,6 @@ export default function HomePage() {
 
   // Map state
   const [region, setRegion] = useState<any>(null);
-  // Generate 8 random hotspots around the current region
-  const hotspots: Hotspot[] = useMemo(() => {
-    if (!region) return [];
-    return Array.from({ length: 8 }).map(() => ({
-      latitude: region.latitude + (Math.random() - 0.5) * region.latitudeDelta,
-      longitude: region.longitude + (Math.random() - 0.5) * region.longitudeDelta,
-      radius: 80 + Math.random() * 120, // between 80 and 200 meters
-    }));
-  }, [region]);
   const [mapStyle, setMapStyle] = useState(mapStyles["map_1"]);
   const [infoVisible, setInfoVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-120)).current;
@@ -1328,11 +1317,9 @@ export default function HomePage() {
     );
   }
 
-
   // MAIN MAP + UI
   return (
     <View style={styles.container}>
-<<<<<<< Updated upstream
       <LitterHeatmapMapView
         region={region}
         mapStyle={mapStyle}
@@ -1340,34 +1327,6 @@ export default function HomePage() {
         epaMapOpacity={1}
       />
 
-=======
-      <MapView
-        style={StyleSheet.absoluteFillObject}
-        provider={PROVIDER_GOOGLE}
-        region={region}
-        customMapStyle={mapStyle}
-        showsUserLocation
-        followsUserLocation
-      >
-        {hotspots.map((hs, idx) => (
-          <MapView.Circle
-            key={`hs-${idx}`}
-            center={{ latitude: hs.latitude, longitude: hs.longitude }}
-            radius={hs.radius}
-            strokeColor="rgba(255,165,0,0.6)"
-            fillColor="rgba(255,165,0,0.3)"
-            strokeWidth={1}
-          />
-        ))}
-        {/* Existing heatmap overlay */}
-        <LitterHeatmapMapView
-          region={region}
-          mapStyle={mapStyle}
-          epaMapVisible={true}
-          epaMapOpacity={1}
-        />
-      </MapView>
->>>>>>> Stashed changes
 
       {/* Top Buttons */}
       {!cameraVisible && (
