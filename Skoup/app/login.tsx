@@ -29,7 +29,7 @@ export default function LoginPage() {
       return;
     }
     try {
-    // Replace with your backend API call
+
     const response = await fetch('http://192.168.193.45:5431/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -41,7 +41,7 @@ export default function LoginPage() {
       return;
     }
     const { token, expiresAt } = await response.json();
-    await login(token); // Save token in context and AsyncStorage
+    await login(token); 
     router.replace('/');
   } catch (err) {
     console.log(err);
@@ -101,7 +101,7 @@ export default function LoginPage() {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    backgroundColor: '#E6FFFA',  // light green accent
+    backgroundColor: '#E6FFFA', 
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,

@@ -8,7 +8,6 @@ import { View, TouchableOpacity, StyleSheet, Text, TouchableWithoutFeedback } fr
 import { Entypo } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
 
-// -- Authentication Context --
 interface AuthContextValue {
   token: string | null;
   login: (newToken: string) => void;
@@ -31,7 +30,6 @@ export default function RootLayout() {
     const [authError, setAuthError] = useState<string | null>(null);
     const [menuVisible, setMenuVisible] = useState(false);
 
-    // Auth actions
     const login = async (newToken: string) => {
       await AsyncStorage.setItem(TOKEN_KEY, newToken);
       setToken(newToken);
@@ -65,7 +63,7 @@ export default function RootLayout() {
 
     const segments = useSegments();
     const isAuthRoute = segments.includes('login') || segments.includes('register');
-    // Redirect to login if no token after loading
+
     useEffect(() => {
       if (!isLoading && !token) {
         router.replace('/login');
@@ -73,7 +71,7 @@ export default function RootLayout() {
     }, [isLoading, token]);
 
     if (isLoading) {
-      return null; // keep splash visible
+      return null;
     }
 
     if (authError) {
@@ -97,7 +95,6 @@ export default function RootLayout() {
               </View>
               {menuVisible && (
                 <>
-                  {/* full-screen overlay to catch taps */}
                   <TouchableWithoutFeedback onPress={toggleMenu}>
                     <View style={styles.menuOverlay} />
                   </TouchableWithoutFeedback>
@@ -175,12 +172,10 @@ const styles = StyleSheet.create({
       borderRadius: 8,
       paddingVertical: 8,
       zIndex: 20,
-      // iOS shadow
       shadowColor: '#000',
       shadowOpacity: 0.1,
       shadowOffset: { width: 0, height: 2 },
       shadowRadius: 8,
-      // Android
       elevation: 5,
     },
     dropdownItem: {

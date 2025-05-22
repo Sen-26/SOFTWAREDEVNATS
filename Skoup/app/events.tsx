@@ -17,11 +17,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useRouter } from 'expo-router';
 
-// Storage keys
 const EVENTS_KEY = '@events_list';
 const RSVP_KEY = '@user_joined_events';
 
-// Initial hard-coded events with coordinates, RSVP counts, badges
 const initialEvents = [
   { id: 'e1', name: 'Nashville Cleanup',       date: '2025-06-01', latitude: 36.1627, longitude: -86.7816, rsvpCount: 10, badge: 'Newcomer', teamEligible: true },
   { id: 'e2', name: 'Memphis Litter Patrol',   date: '2025-06-05', latitude: 35.1495, longitude: -90.0490, rsvpCount: 25, badge: 'Coastal Hero', teamEligible: false },
@@ -31,7 +29,6 @@ const initialEvents = [
 export default function EventsPage() {
   const router = useRouter();
 
-  // UI state
   const [mode, setMode]                 = useState<'Create' | 'Join'>('Create');
   const [eventsList, setEventsList]     = useState<typeof initialEvents>(initialEvents);
   const [joinedIds, setJoinedIds]       = useState<string[]>([]);
@@ -39,7 +36,6 @@ export default function EventsPage() {
   const [filter, setFilter]             = useState<'All' | 'Nearby' | 'Today'>('All');
 
 
-  // Load persisted events and RSVPs, request calendar & notification permissions
   useEffect(() => {
     AsyncStorage.getItem(EVENTS_KEY)
       .then(v => v && setEventsList(JSON.parse(v)))
@@ -58,21 +54,18 @@ export default function EventsPage() {
     }, [])
   );
 
-  // Persist eventsList on change
   useEffect(() => {
     AsyncStorage.setItem(EVENTS_KEY, JSON.stringify(eventsList)).catch(console.error);
   }, [eventsList]);
 
-  // Filter and sort events
   const filteredEvents = eventsList
     .filter(e => e.name.toLowerCase().includes(searchQuery.toLowerCase()))
     .filter(e => {
-      if (filter === 'Nearby') return true; // placeholder
+      if (filter === 'Nearby') return true;
       if (filter === 'Today')  return e.date === new Date().toISOString().slice(0,10);
       return true;
     });
 
-  // Handlers
   const handleCreate = (name: string, date: string) => {
     const id = `c${Date.now()}`;
     setEventsList(prev => [...prev, { id, name, date, latitude:0, longitude:0, rsvpCount:0, badge:'Host', teamEligible:true }]);
@@ -82,7 +75,6 @@ export default function EventsPage() {
     const newJoined = joined ? joinedIds.filter(i => i !== item.id) : [...joinedIds, item.id];
     setJoinedIds(newJoined);
     AsyncStorage.setItem(RSVP_KEY, JSON.stringify(newJoined)).catch(console.error);
-    // update count locally
     setEventsList(prev =>
       prev.map(e => e.id === item.id
         ? { ...e, rsvpCount: joined ? e.rsvpCount - 1 : e.rsvpCount + 1 }
@@ -97,7 +89,6 @@ export default function EventsPage() {
     Share.share({ message: `Join me at "${item.name}" on ${item.date}!` });
   };
 
-  // Create & Join sections
   const renderCreate = () => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Create a New Event</Text>
@@ -157,7 +148,7 @@ export default function EventsPage() {
         <MapView
           style={styles.map}
           initialRegion={{
-            latitude: 35.5175,      // Tennessee center
+            latitude: 35.5175,
             longitude: -86.5804,
             latitudeDelta: 5,
             longitudeDelta: 5,
