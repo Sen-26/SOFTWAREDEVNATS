@@ -46,22 +46,23 @@ export default function LitterHeatmapMapView({
   useEffect(() => {
     const fetchGeojson = async () => {
       try {
-        const res = await axios.post('http://192.168.193.45:5431/generate-epa-heatmap', {
+        const res = await axios.post('http://192.168.193.45:5431/heatmap/generate-epa-heatmap', {
           region: region,
         });
+        console.log(JSON.stringify(res.data));
         const parsed = parseGeoJSONToPolygons(res.data);
         setPolygons(parsed);
+        //console.log(parsed);
       } catch (err) {
         console.error("Failed to load EPA heatmap", err);
       }
     };
   
-    if (epaMapVisible) {
-      fetchGeojson();
-    }
+   
+    fetchGeojson();
+    
   }, [region, epaMapVisible]);
   
-
   return (
     <MapView
       style={StyleSheet.absoluteFillObject}
@@ -71,12 +72,14 @@ export default function LitterHeatmapMapView({
       region={region}
       customMapStyle={mapStyle}
     >
-      {epaMapVisible &&
+      {
+        
         polygons.map((poly) => (
           <Polygon
             key={poly.id}
             coordinates={poly.coordinates}
-            fillColor={getFillColor(poly.density, epaMapOpacity)}
+            //fillColor={getFillColor(poly.density, epaMapOpacity)}
+            fillColor="rgba(255, 0, 0, 0.5)"
             strokeColor="rgba(0,0,0,0.05)"
             strokeWidth={0.5}
           />

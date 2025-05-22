@@ -16,13 +16,16 @@ import {
 } from 'react-native';
 import { useAuth } from './_layout';
 
-const API_BASE = 'http://192.168.193.45:5431'; // Update with your server address
-
+const API_BASE = 'http://192.168.193.45:5431'; 
 import { LineChart } from 'react-native-chart-kit';
 
 const AVATAR_KEY = '@user_avatar';
 const { width } = Dimensions.get('window');
-const bannerStyles = {banner_1: null, banner_2: 'https://i.ibb.co/7J5WR0xL/trash-banner-1.png'};
+const bannerStyles = {banner_1: null, banner_2: 'https://i.ibb.co/7J5WR0xL/trash-banner-1.png',    banner_3:
+ 'https://www.goodfreephotos.com/cache/other-photos/backgrounds/green-pattern-and-design-background.jpg',
+
+banner_4:'https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTA5L3BkbWlzY3Byb2plY3QyMC1zbWtra3MxOTY0LTM0Ni1pbWFnZS5qcGc.jpg',
+};
 export default function Profile() {
   const router = useRouter();
 
@@ -79,13 +82,28 @@ export default function Profile() {
           // Update trash collected count
           if (typeof data.trash_collected === 'number') {
             setTrashCollected(data.trash_collected);
+            const total = data.trash_collected;
+            // update only the latest entry for each chart
+            setDailyCounts(prev => {
+              // ensure 7-day array
+              const arr = prev.length === 7 ? [...prev] : Array(7).fill(0);
+              arr[arr.length - 1] = total;
+              return arr;
+            });
+            setWeeklyCounts(prev => {
+              const arr = prev.length === 4 ? [...prev] : Array(4).fill(0);
+              arr[arr.length - 1] = total;
+              return arr;
+            });
+            setMonthlyCounts(prev => {
+              const arr = prev.length === 6 ? [...prev] : Array(6).fill(0);
+              arr[arr.length - 1] = total;
+              return arr;
+            });
           }
         })
         .catch(console.error);
-      // Still load chart history from AsyncStorage
-      AsyncStorage.getItem('@daily_history').then(v => setDailyCounts(v ? JSON.parse(v) : []));
-      AsyncStorage.getItem('@weekly_history').then(v => setWeeklyCounts(v ? JSON.parse(v) : []));
-      AsyncStorage.getItem('@monthly_history').then(v => setMonthlyCounts(v ? JSON.parse(v) : []));
+      // Removed AsyncStorage history reads
     }, [token])
   );
 
@@ -343,6 +361,7 @@ export default function Profile() {
                 height={160}
                 chartConfig={styles.chartConfig}
                 bezier
+                fromZero
                 style={styles.chartStyle}
               />
               <Text style={styles.chartLabel}>Last 4 Weeks</Text>
@@ -354,6 +373,7 @@ export default function Profile() {
                 width={chartWidth}
                 height={140}
                 chartConfig={styles.chartConfig}
+                fromZero
                 style={styles.chartStyle}
               />
               <Text style={styles.chartLabel}>Last 6 Months</Text>
@@ -365,6 +385,7 @@ export default function Profile() {
                 width={chartWidth}
                 height={140}
                 chartConfig={styles.chartConfig}
+                fromZero
                 style={styles.chartStyle}
               />
             </View>

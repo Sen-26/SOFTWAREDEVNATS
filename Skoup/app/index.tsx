@@ -1,3 +1,9 @@
+// Quest completion thresholds (6 daily + 6 weekly)
+const QUEST_MAX = [5, 10, 15, 20, 25, 30, 50, 100, 150, 200, 250, 300];
+// AsyncStorage key for persisting quest progress
+const QUESTS_KEY = '@user_quests';
+// AsyncStorage key for tracking which quests have been claimed
+const CLAIMED_KEY = '@user_claimed_quests';
 import { Entypo, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Buffer } from 'buffer';
@@ -20,6 +26,7 @@ import {
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from './_layout';
+import LitterHeatmapMapView from './heatmap';
 
 const apiURL = "http://192.168.193.45:5431/";
 
@@ -977,6 +984,7 @@ export default function HomePage() {
   const [progressCount, setProgressCount] = useState<number>(0);
   const [trashCollected, setTrashCollected] = useState<number>(0);
   const [equippedItems, setEquippedItems] = useState<string[]>([]);
+  const [claimedCount, setClaimedCount] = useState<number>(0);
 
   const insets = useSafeAreaInsets();
   // Animated width from 0→percent
@@ -1022,6 +1030,21 @@ export default function HomePage() {
           }
         })
         .catch(console.error);
+      // Now load claimed flags to drive homepage progress bar
+      AsyncStorage.getItem(CLAIMED_KEY)
+        .then(val => {
+          let arr: unknown;
+          try {
+            arr = JSON.parse(val || '[]');
+          } catch {
+            arr = [];
+          }
+          if (Array.isArray(arr)) {
+            // count true flags
+            setClaimedCount((arr as boolean[]).filter(Boolean).length);
+          }
+        })
+        .catch(console.error);
     }, [token])
   );
 
@@ -1041,16 +1064,20 @@ export default function HomePage() {
   };
 
 
-  // Animate when progressCount changes
+  // Animate progress bar fill based on claimed quests
   useEffect(() => {
-    const pct = (progressCount / 50) * 100;
+    // fill percent = claimed quests / total quests
+    const totalQuests = QUEST_MAX.length;
+    const pct = totalQuests > 0
+      ? (claimedCount / totalQuests) * 100
+      : 0;
     Animated.timing(progressAnim, {
       toValue: pct,
       duration: 800,
       easing: Easing.out(Easing.quad),
       useNativeDriver: false,
     }).start();
-  }, [progressCount]);
+  }, [claimedCount]);
 
   // Map state
   const [region, setRegion] = useState<any>(null);
@@ -1059,7 +1086,7 @@ export default function HomePage() {
   const slideAnim = useRef(new Animated.Value(-120)).current;
 
   // EPA Map Overlay State
-  const [epaMapVisible, setEpaMapVisible] = useState(false);
+  const [epaMapVisible, setEpaMapVisible] = useState(true);
   const [epaMapOpacity, setEpaMapOpacity] = useState(0.7);
 
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
@@ -1116,6 +1143,23 @@ export default function HomePage() {
       const json = await resp.json();
       if (typeof json.trash_collected === 'number') {
         setTrashCollected(json.trash_collected);
+      }
+      // Build and send full quest progress array
+      const totalTrash = json.trash_collected;
+      const progressArray = QUEST_MAX.map(max => Math.min(totalTrash, max));
+      // Send updated quest progress to server
+      const questResp = await fetch(`${apiURL}users/me/update-quests`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ quests: progressArray }),
+      });
+      const questJson = await questResp.json();
+      if (Array.isArray(questJson.quests)) {
+        // Persist the returned array so QuestsPage can read it
+        await AsyncStorage.setItem(QUESTS_KEY, JSON.stringify(questJson.quests));
       }
       // Update server-side coin balance
       const coinResp = await fetch(`${apiURL}users/me/coin`, {
@@ -1288,30 +1332,13 @@ export default function HomePage() {
   // MAIN MAP + UI
   return (
     <View style={styles.container}>
-      <MapView
-        style={StyleSheet.absoluteFillObject}
-        provider={PROVIDER_GOOGLE}
-        showsUserLocation
-        followsUserLocation
-        region={region}
-        customMapStyle={mapStyle}
-      >
-        {epaMapVisible && (
-          <Overlay
-            bounds={[
-              [24.396308, -125.0],  // Southwest coordinate [latitude, longitude]
-              [49.384358, -66.93457]   // Northeast coordinate [latitude, longitude]
-            ]}
-            image={{
-              uri: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/US_TrashIndex_BoundedCombined_v1/MapServer/export?dpi=96&transparent=true&format=png32&layers=show:0&bbox=' +
-                `${region.longitude - region.longitudeDelta},${region.latitude - region.latitudeDelta},` +
-                `${region.longitude + region.longitudeDelta},${region.latitude + region.latitudeDelta}` +
-                '&bboxSR=4326&imageSR=4326&size=512,512&f=image'
-            }}
-            opacity={epaMapOpacity}
-          />
-        )}
-      </MapView>
+     <LitterHeatmapMapView
+  region={region}
+  mapStyle={mapStyle}
+  epaMapVisible={true}
+  epaMapOpacity={1}
+/>
+
 
       {/* Top Buttons */}
       {!cameraVisible && (
@@ -1380,9 +1407,12 @@ export default function HomePage() {
             <Ionicons name="storefront-outline" size={20} color="#333" style={styles.dropdownIcon} />
             <Text style={styles.dropdownText}>Shop</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { toggleMenu(); /* add settings route if exists */ }} style={styles.dropdownItem}>
-            <Ionicons name="settings-outline" size={20} color="#333" style={styles.dropdownIcon} />
-            <Text style={styles.dropdownText}>Settings</Text>
+          <TouchableOpacity
+            onPress={() => { toggleMenu(); router.push('/events'); }}
+            style={styles.dropdownItem}
+          >
+            <Ionicons name="calendar-outline" size={20} color="#333" style={styles.dropdownIcon} />
+            <Text style={styles.dropdownText}>Events</Text>
           </TouchableOpacity>
 
           {/* EPA Map Layer Toggle */}
@@ -1621,18 +1651,15 @@ const styles = StyleSheet.create({
     left: 20,
     width: 150,
     backgroundColor: '#fff',
-    // iOS shadow
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
-    // Android elevation
     elevation: 5,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 10,
     zIndex: 10,
-    // height removed to auto-size
   },
   dropdownItem: {
     flexDirection: 'row',
@@ -1668,7 +1695,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
   },
-  // Card for scan results
   resultsCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -1755,7 +1781,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  // Map Legend
+  // map legend
   mapLegend: {
     position: 'absolute',
     right: 20,
