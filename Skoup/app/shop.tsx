@@ -156,6 +156,22 @@ export default function ShopPage() {
       cost: 400,
       image: 'https://i.ibb.co/7J5WR0xL/trash-banner-1.png',
     },
+    {
+      id: '7',
+      displayName: 'Ominous Banner',
+
+      name: 'banner_3',
+      cost: 400,
+      image: 'https://www.goodfreephotos.com/cache/other-photos/backgrounds/green-pattern-and-design-background.jpg',
+    },
+    {
+      id: '8',
+      displayName: 'Watercolor Banner',
+
+      name: 'banner_4',
+      cost: 400,
+      image: 'https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTA5L3BkbWlzY3Byb2plY3QyMC1zbWtra3MxOTY0LTM0Ni1pbWFnZS5qcGc.jpg',
+    },
   ];
   const [userCoin, setUserCoin] = useState(0);
   const [userStreak, setUserStreak] = useState(0);

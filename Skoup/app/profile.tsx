@@ -16,13 +16,16 @@ import {
 } from 'react-native';
 import { useAuth } from './_layout';
 
-const API_BASE = 'http://192.168.193.45:5431'; // Update with your server address
-
+const API_BASE = 'http://192.168.193.45:5431'; 
 import { LineChart } from 'react-native-chart-kit';
 
 const AVATAR_KEY = '@user_avatar';
 const { width } = Dimensions.get('window');
-const bannerStyles = {banner_1: null, banner_2: 'https://i.ibb.co/7J5WR0xL/trash-banner-1.png'};
+const bannerStyles = {banner_1: null, banner_2: 'https://i.ibb.co/7J5WR0xL/trash-banner-1.png',    banner_3:
+ 'https://www.goodfreephotos.com/cache/other-photos/backgrounds/green-pattern-and-design-background.jpg',
+
+banner_4:'https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTA5L3BkbWlzY3Byb2plY3QyMC1zbWtra3MxOTY0LTM0Ni1pbWFnZS5qcGc.jpg',
+};
 export default function Profile() {
   const router = useRouter();
 

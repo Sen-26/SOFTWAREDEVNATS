@@ -20,6 +20,7 @@ import {
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from './_layout';
+import LitterHeatmapMapView from './heatmap';
 
 const apiURL = "http://192.168.193.45:5431/";
 
@@ -1059,7 +1060,7 @@ export default function HomePage() {
   const slideAnim = useRef(new Animated.Value(-120)).current;
 
   // EPA Map Overlay State
-  const [epaMapVisible, setEpaMapVisible] = useState(false);
+  const [epaMapVisible, setEpaMapVisible] = useState(true);
   const [epaMapOpacity, setEpaMapOpacity] = useState(0.7);
 
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
@@ -1288,30 +1289,13 @@ export default function HomePage() {
   // MAIN MAP + UI
   return (
     <View style={styles.container}>
-      <MapView
-        style={StyleSheet.absoluteFillObject}
-        provider={PROVIDER_GOOGLE}
-        showsUserLocation
-        followsUserLocation
-        region={region}
-        customMapStyle={mapStyle}
-      >
-        {epaMapVisible && (
-          <Overlay
-            bounds={[
-              [24.396308, -125.0],  // Southwest coordinate [latitude, longitude]
-              [49.384358, -66.93457]   // Northeast coordinate [latitude, longitude]
-            ]}
-            image={{
-              uri: 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/US_TrashIndex_BoundedCombined_v1/MapServer/export?dpi=96&transparent=true&format=png32&layers=show:0&bbox=' +
-                `${region.longitude - region.longitudeDelta},${region.latitude - region.latitudeDelta},` +
-                `${region.longitude + region.longitudeDelta},${region.latitude + region.latitudeDelta}` +
-                '&bboxSR=4326&imageSR=4326&size=512,512&f=image'
-            }}
-            opacity={epaMapOpacity}
-          />
-        )}
-      </MapView>
+     <LitterHeatmapMapView
+  region={region}
+  mapStyle={mapStyle}
+  epaMapVisible={true}
+  epaMapOpacity={1}
+/>
+
 
       {/* Top Buttons */}
       {!cameraVisible && (
@@ -1621,18 +1605,15 @@ const styles = StyleSheet.create({
     left: 20,
     width: 150,
     backgroundColor: '#fff',
-    // iOS shadow
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
-    // Android elevation
     elevation: 5,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 10,
     zIndex: 10,
-    // height removed to auto-size
   },
   dropdownItem: {
     flexDirection: 'row',
@@ -1668,7 +1649,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
   },
-  // Card for scan results
   resultsCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -1755,7 +1735,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  // Map Legend
+  // map legend
   mapLegend: {
     position: 'absolute',
     right: 20,
