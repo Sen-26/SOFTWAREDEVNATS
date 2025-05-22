@@ -1,8 +1,5 @@
-// Quest completion thresholds (6 daily + 6 weekly)
 const QUEST_MAX = [5, 10, 15, 20, 25, 30, 50, 100, 150, 200, 250, 300];
-// AsyncStorage key for persisting quest progress
 const QUESTS_KEY = '@user_quests';
-// AsyncStorage key for tracking which quests have been claimed
 const CLAIMED_KEY = '@user_claimed_quests';
 import { Entypo, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -986,10 +983,8 @@ export default function HomePage() {
   const [claimedCount, setClaimedCount] = useState<number>(0);
 
   const insets = useSafeAreaInsets();
-  // Animated width from 0→percent
   const progressAnim = useRef(new Animated.Value(0)).current;
 
-  // Refresh profile data on screen focus
   useFocusEffect(
     useCallback(() => {
       fetch(`${apiURL}users/me`, {
@@ -1002,7 +997,6 @@ export default function HomePage() {
         .then(res => res.json())
         .then(data => {
           const endpoint = `${apiURL}/users/${data.id}/avatar?t=${Date.now()}`;
-          // Fetch raw image bytes and convert to base64 data URI
           fetch(endpoint, {
             headers: { Authorization: `Bearer ${token}` },
           })
@@ -1013,7 +1007,6 @@ export default function HomePage() {
             })
             .catch(console.error);
           if (data.username) setUserName(data.username);
-          // update coin in AsyncStorage for progress calc
           setEquippedItems(data.equipped_items || []);
           console.log(data.equipped_items)
           const mapKey = data.equipped_items.find(item => item.startsWith("map_")) || "map_1";
@@ -1023,12 +1016,10 @@ export default function HomePage() {
             const pieces = Math.floor(data.coin / 2);
             setProgressCount(Math.min(pieces, 50));
           }
-          // update trash count
           if (typeof data.trash_collected === 'number') {
             setTrashCollected(data.trash_collected);
           }
           if (Array.isArray(data.quests)) {
-            // Only count quests that are exactly 1 (completed)
             const completed = data.quests.filter(q => q === 1).length;
             setClaimedCount(completed);
           }
@@ -1042,10 +1033,8 @@ export default function HomePage() {
     const response = await originalFetch(input, init);
 
     if (response.status === 401) {
-      // Optionally clear tokens here (e.g., AsyncStorage.removeItem('token'))
       Alert.alert('Session expired', 'Please log in again.');
       router.replace('/login'); // or your login route
-      // Optionally, return a rejected promise to stop further processing
       return Promise.reject(new Error('Unauthorized'));
     }
 
@@ -1054,7 +1043,6 @@ export default function HomePage() {
 
 
   useEffect(() => {
-    // fill percent = claimed quests / total quests
     const totalQuests = 12;
     const pct = totalQuests > 0
       ? (claimedCount / totalQuests) * 100
@@ -1067,13 +1055,11 @@ export default function HomePage() {
     }).start();
   }, [claimedCount]);
 
-  // Map state
   const [region, setRegion] = useState<any>(null);
   const [mapStyle, setMapStyle] = useState(mapStyles["map_1"]);
   const [infoVisible, setInfoVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-120)).current;
 
-  // EPA Map Overlay State
   const [epaMapVisible, setEpaMapVisible] = useState(true);
   const [epaMapOpacity, setEpaMapOpacity] = useState(0.7);
 
@@ -1088,14 +1074,11 @@ export default function HomePage() {
   useEffect(() => {
     AsyncStorage.setItem(EPA_MAP_VISIBLE, epaMapVisible.toString());
   }, [epaMapVisible]);
-  // Camera permission + ref
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
 
-  // NEW: toggle camera view
   const [cameraVisible, setCameraVisible] = useState(false);
 
-  // Result modal state
   const [showResults, setShowResults] = useState(false);
   const [tokensEarned, setTokensEarned] = useState<number>(0);
 
@@ -1116,10 +1099,8 @@ export default function HomePage() {
         setCameraVisible(true);
         return;
       }
-      // compute tokens based on returned count
       const current = parseInt((await AsyncStorage.getItem(COIN_KEY)) || '0', 10);
       const tokens = count * 2;
-      // Update server trash count and read back the new total
       const resp = await fetch(`${apiURL}users/me/trash_collected`, {
         method: 'POST',
         headers: {
@@ -1132,10 +1113,8 @@ export default function HomePage() {
       if (typeof json.trash_collected === 'number') {
         setTrashCollected(json.trash_collected);
       }
-      // Build and send full quest progress array
       const totalTrash = json.trash_collected;
       const progressArray = QUEST_MAX.map(max => Math.min(totalTrash, max));
-      // Send updated quest progress to server
       const questResp = await fetch(`${apiURL}users/me/update-quests`, {
         method: 'POST',
         headers: {
@@ -1146,10 +1125,8 @@ export default function HomePage() {
       });
       const questJson = await questResp.json();
       if (Array.isArray(questJson.quests)) {
-        // Persist the returned array so QuestsPage can read it
         await AsyncStorage.setItem(QUESTS_KEY, JSON.stringify(questJson.quests));
       }
-      // Update server-side coin balance
       const coinResp = await fetch(`${apiURL}users/me/coin`, {
         method: 'POST',
         headers: {
@@ -1172,7 +1149,6 @@ export default function HomePage() {
   const [annotatedImage, setAnnotatedImage] = useState<string | null>(null);
   const [detectionCount, setDetectionCount] = useState<number | null>(null);
 
-  // Dropdown menu hooks
   const [menuVisible, setMenuVisible] = useState(false);
   const toggleMenu = () => {
     setMenuVisible(v => !v);
@@ -1211,7 +1187,6 @@ export default function HomePage() {
       throw error;
     }
   };
-  // Fetch location
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -1226,7 +1201,6 @@ export default function HomePage() {
     })();
   }, []);
 
-  // Update user location on entering HomePage
   useEffect(() => {
     (async () => {
       if (!token) return;
@@ -1247,12 +1221,10 @@ export default function HomePage() {
           });
         }
       } catch (e) {
-        // Ignore location errors
       }
     })();
   }, [token]);
 
-  // Show scan results
   if (showResults) {
     return (
       <View style={styles.resultsContainer}>
@@ -1291,7 +1263,6 @@ export default function HomePage() {
     );
   }
 
-  // SHOW CAMERA PREVIEW IF ACTIVE
   if (cameraVisible && permission?.granted) {
     return (
       <View style={styles.cameraContainer}>
@@ -1300,7 +1271,6 @@ export default function HomePage() {
           style={styles.cameraFull}
           facing="back"
         />
-        {/* Tooltip */}
         <View style={styles.tooltip}>
           <Text style={styles.tooltipText}>Make sure the trash is in frame</Text>
         </View>
@@ -1317,7 +1287,6 @@ export default function HomePage() {
     );
   }
 
-  // MAIN MAP + UI
   return (
     <View style={styles.container}>
       <LitterHeatmapMapView
@@ -1328,7 +1297,6 @@ export default function HomePage() {
       />
 
 
-      {/* Top Buttons */}
       {!cameraVisible && (
         <View style={styles.topButtons}>
           <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
@@ -1348,12 +1316,9 @@ export default function HomePage() {
               onPress={() => router.push('/quests')}
             >
 
-              {/* Header (removed progress count text) */}
               <View style={styles.progressHeader}>
-                {/* Progress count text removed */}
               </View>
 
-              {/* Progress bar: dark grey track, orange fill */}
               <Text style={styles.trashCollectedOverlay}>
                 {trashCollected}
                 <Text style={styles.trashCollectedItems}> items</Text>
@@ -1380,7 +1345,6 @@ export default function HomePage() {
         </View>
       )}
 
-      {/* Dropdown Menu */}
       {menuVisible && (
         <View style={styles.dropdownMenu}>
           <TouchableOpacity onPress={() => { toggleMenu(); router.push('/'); }} style={styles.dropdownItem}>
@@ -1403,7 +1367,6 @@ export default function HomePage() {
             <Text style={styles.dropdownText}>Events</Text>
           </TouchableOpacity>
 
-          {/* EPA Map Layer Toggle */}
           <View style={[styles.dropdownItem, styles.toggleItem]}>
             <Ionicons name="layers-outline" size={20} color="#333" style={styles.dropdownIcon} />
             <Text style={styles.dropdownText}>EPA Trash Risk</Text>
@@ -1416,7 +1379,6 @@ export default function HomePage() {
             />
           </View>
 
-          {/* Opacity Slider (only show when EPA map is visible) */}
           {epaMapVisible && (
             <View style={[styles.dropdownItem, styles.sliderItem]}>
               <Text style={styles.sliderLabel}>Opacity: {Math.round(epaMapOpacity * 100)}%</Text>
@@ -1435,7 +1397,6 @@ export default function HomePage() {
         </View>
       )}
 
-      {/* Bottom Buttons */}
       <View style={styles.bottomButtons}>
         <TouchableOpacity
           style={styles.profileButton}
@@ -1446,7 +1407,6 @@ export default function HomePage() {
           ) : (
             <Image source={require('../assets/avatar-placeholder.jpg')} style={styles.profileImage} />
           )}
-          {/* Username overlay */}
           <View style={styles.profileNameOverlay}>
             <Text style={styles.profileNameOverlayText}>{userName}</Text>
           </View>
@@ -1470,7 +1430,6 @@ export default function HomePage() {
         </TouchableOpacity>
       </View>
 
-      {/* EPA Map Legend (only show when EPA map is visible) */}
       {epaMapVisible && (
         <View style={styles.mapLegend}>
           <Text style={styles.legendTitle}>EPA Trash Risk</Text>
@@ -1498,7 +1457,6 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  // CAMERA MODE
   cameraContainer: { flex: 1 },
   cameraFull: { flex: 1 },
   snapButton: {
@@ -1527,7 +1485,6 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
 
-  // MAP MODE UI
   topButtons: {
     position: 'absolute',
     top: 40,
@@ -1769,7 +1726,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  // map legend
   mapLegend: {
     position: 'absolute',
     right: 20,
@@ -1804,7 +1760,6 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 12,
   },
-  // Themed panel parent
   progressPanel: {
     position: 'absolute',
     zIndex: 20,
@@ -1845,9 +1800,9 @@ const styles = StyleSheet.create({
   progressBarBackground: {
     width: '95%',
     height: 25,
-    borderRadius: 12, // fully round corners
-    backgroundColor: '#2e2e2e',  // very dark grey for unfilled bar
-    overflow: 'visible',   // allow coin to overflow
+    borderRadius: 12, 
+    backgroundColor: '#2e2e2e',  
+    overflow: 'visible',  
     marginTop: 8,
   },
   progressBarFill: {
@@ -1857,29 +1812,27 @@ const styles = StyleSheet.create({
   },
   nextRewardIcon: {
     position: 'absolute',
-    right: -13,        // shift icon to overlap end of bar
+    right: -13,       
     top: '50%',
-    marginTop: -18,    // center icon vertically over bar (half of height)
-    width: 34,         // larger icon size
+    marginTop: -18,   
+    width: 34,        
     height: 34,
-    borderRadius: 25,  // match half of width/height
+    borderRadius: 25,  
     zIndex: 5,
   },
-  // Overlay for trash collected number on progress bar
   trashCollectedOverlay: {
     position: 'absolute',
-    top: '17%',       // moved up
-    right: '20%',     // shifted to the right
-    fontSize: 26,     // larger text
+    top: '17%',      
+    right: '20%',   
+    fontSize: 26,    
     fontWeight: 'bold',
-    color: '#FFA500', // orange
+    color: '#FFA500', 
     zIndex: 2,
   },
-  // Smaller “items” text next to trash count
   trashCollectedItems: {
-    fontSize: 16,       // smaller than the main number
+    fontSize: 16,     
     fontWeight: 'normal',
-    color: '#FFA500',   // match the orange color
+    color: '#FFA500',  
   },
 
 });
