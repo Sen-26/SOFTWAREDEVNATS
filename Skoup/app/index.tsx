@@ -1475,7 +1475,7 @@ const styles = StyleSheet.create({
   closeIcon: {
     position: 'absolute',
     top: 60,
-    left: 20,
+    right: 20,
     width: 40,
     height: 40,
     borderRadius: 20,
