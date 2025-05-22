@@ -82,13 +82,28 @@ export default function Profile() {
           // Update trash collected count
           if (typeof data.trash_collected === 'number') {
             setTrashCollected(data.trash_collected);
+            const total = data.trash_collected;
+            // update only the latest entry for each chart
+            setDailyCounts(prev => {
+              // ensure 7-day array
+              const arr = prev.length === 7 ? [...prev] : Array(7).fill(0);
+              arr[arr.length - 1] = total;
+              return arr;
+            });
+            setWeeklyCounts(prev => {
+              const arr = prev.length === 4 ? [...prev] : Array(4).fill(0);
+              arr[arr.length - 1] = total;
+              return arr;
+            });
+            setMonthlyCounts(prev => {
+              const arr = prev.length === 6 ? [...prev] : Array(6).fill(0);
+              arr[arr.length - 1] = total;
+              return arr;
+            });
           }
         })
         .catch(console.error);
-      // Still load chart history from AsyncStorage
-      AsyncStorage.getItem('@daily_history').then(v => setDailyCounts(v ? JSON.parse(v) : []));
-      AsyncStorage.getItem('@weekly_history').then(v => setWeeklyCounts(v ? JSON.parse(v) : []));
-      AsyncStorage.getItem('@monthly_history').then(v => setMonthlyCounts(v ? JSON.parse(v) : []));
+      // Removed AsyncStorage history reads
     }, [token])
   );
 
@@ -346,6 +361,7 @@ export default function Profile() {
                 height={160}
                 chartConfig={styles.chartConfig}
                 bezier
+                fromZero
                 style={styles.chartStyle}
               />
               <Text style={styles.chartLabel}>Last 4 Weeks</Text>
@@ -357,6 +373,7 @@ export default function Profile() {
                 width={chartWidth}
                 height={140}
                 chartConfig={styles.chartConfig}
+                fromZero
                 style={styles.chartStyle}
               />
               <Text style={styles.chartLabel}>Last 6 Months</Text>
@@ -368,6 +385,7 @@ export default function Profile() {
                 width={chartWidth}
                 height={140}
                 chartConfig={styles.chartConfig}
+                fromZero
                 style={styles.chartStyle}
               />
             </View>

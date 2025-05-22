@@ -8,7 +8,6 @@ import {
   FlatList,
   Image,
   Dimensions,
-  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
@@ -18,95 +17,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const { width } = Dimensions.get('window');
 const apiURL = "http://192.168.193.45:5431/";
 
-type Tab = 'Challenges' | 'Streaks' | 'Achievements' | 'Shop';
 
 export default function ShopPage() {
-  const [selectedTab, setSelectedTab] = useState<Tab>('Shop');
-
-  const renderChallenges = () => (
-    <SafeAreaView>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        horizontal={false}
-        showsHorizontalScrollIndicator={false}
-        alwaysBounceHorizontal={false}
-      >
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="sunny-outline" size={20} color="#007bff" />
-            <Text style={styles.cardTitle}>Daily Missions</Text>
-          </View>
-          <Text style={styles.cardText}>• Pick 10 pieces of trash today</Text>
-          <Text style={styles.cardText}>• Earn 20 coins for completion</Text>
-        </View>
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="calendar-outline" size={20} color="#007bff" />
-            <Text style={styles.cardTitle}>Weekly Missions</Text>
-          </View>
-          <Text style={styles.cardText}>• Clean 50 items this week</Text>
-          <Text style={styles.cardText}>• Earn 150 coins for completion</Text>
-        </View>
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="location-outline" size={20} color="#007bff" />
-            <Text style={styles.cardTitle}>Nearby Hotspot</Text>
-          </View>
-          <Text style={styles.cardText}>• Central Park: Collect 5 items</Text>
-          <Text style={styles.cardText}>• Earn 30 coins and badge</Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-
-  const renderStreaks = () => (
-    <SafeAreaView>
-      <View style={styles.content}>
-        <View style={styles.streakCard}>
-          <View style={styles.streakCircle}>
-            <Text style={styles.streakNumber}>{userStreak}</Text>
-          </View>
-          <Text style={styles.streakLabel}>DAY STREAK</Text>
-        </View>
-        <Text style={styles.sectionText}>
-          Keep up your daily cleanup activity to build streaks and unlock exclusive rewards.
-        </Text>
-      </View>
-    </SafeAreaView>
-  );
-
-  const renderAchievements = () => (
-    <SafeAreaView>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        horizontal={false}
-        showsHorizontalScrollIndicator={false}
-        alwaysBounceHorizontal={false}
-      >
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="trophy-outline" size={20} color="#007bff" />
-            <Text style={styles.cardTitle}>100 Pieces Collected</Text>
-          </View>
-          <Text style={styles.cardText}>Unlocked on May 10, 2025</Text>
-        </View>
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="trophy-outline" size={20} color="#007bff" />
-            <Text style={styles.cardTitle}>30-Day Streak</Text>
-          </View>
-          <Text style={styles.cardText}>Unlocked on May 5, 2025</Text>
-        </View>
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="trophy-outline" size={20} color="#007bff" />
-            <Text style={styles.cardTitle}>Community Hero</Text>
-          </View>
-          <Text style={styles.cardText}>Helped organize 3 events</Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
 
   const shopItems = [
     {
@@ -248,7 +160,13 @@ export default function ShopPage() {
   const renderShop = () => (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.shopWrapper}>
-        <Text style={styles.coinDisplay}>💰 Coins: {userCoin}</Text>
+        <View style={styles.coinContainer}>
+          <Image
+            source={require('../assets/ui/coin.png')}
+            style={styles.coinIcon}
+          />
+          <Text style={styles.coinDisplay}>{userCoin}</Text>
+        </View>
         <FlatList
           horizontal={false}
           showsHorizontalScrollIndicator={false}
@@ -264,7 +182,13 @@ export default function ShopPage() {
               <View style={styles.shopCard}>
                 <Image source={{ uri: item.image }} style={styles.shopImage} />
                 <Text style={styles.shopName}>{item.displayName}</Text>
-                <Text style={styles.shopCost}>💰 {item.cost}</Text>
+                <View style={styles.costContainer}>
+                  <Image
+                    source={require('../assets/ui/coin.png')}
+                    style={styles.coinSmallIcon}
+                  />
+                  <Text style={styles.shopCost}>{item.cost}</Text>
+                </View>
     
                 {owned ? (
                   equipped ? (
@@ -295,102 +219,9 @@ export default function ShopPage() {
     </SafeAreaView>
   );
   
-  
-  const renderContent = () => {
-    switch (selectedTab) {
-      case 'Challenges':
-        return renderChallenges();
-      case 'Streaks':
-        return renderStreaks();
-      case 'Achievements':
-        return renderAchievements();
-      case 'Shop':
-        return renderShop();
-      default:
-        return null;
-    }
-  };
-
   return (
     <View style={styles.container}>
-      {/* Main content */}
-      {renderContent()}
-
-      {/* Bottom Tabs */}
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => setSelectedTab('Challenges')}
-        >
-          <Ionicons
-            name="calendar-outline"
-            size={24}
-            color={selectedTab === 'Challenges' ? '#007bff' : '#666'}
-          />
-          <Text
-            style={[
-              styles.tabText,
-              selectedTab === 'Challenges' && styles.tabTextActive,
-            ]}
-          >
-            Challenges
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => setSelectedTab('Streaks')}
-        >
-          <Ionicons
-            name="flame-outline"
-            size={24}
-            color={selectedTab === 'Streaks' ? '#007bff' : '#666'}
-          />
-          <Text
-            style={[
-              styles.tabText,
-              selectedTab === 'Streaks' && styles.tabTextActive,
-            ]}
-          >
-            Streaks
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => setSelectedTab('Achievements')}
-        >
-          <Ionicons
-            name="trophy-outline"
-            size={24}
-            color={selectedTab === 'Achievements' ? '#007bff' : '#666'}
-          />
-          <Text
-            style={[
-              styles.tabText,
-              selectedTab === 'Achievements' && styles.tabTextActive,
-            ]}
-          >
-            Achievements
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => setSelectedTab('Shop')}
-        >
-          <Ionicons
-            name="cart-outline"
-            size={24}
-            color={selectedTab === 'Shop' ? '#007bff' : '#666'}
-          />
-          <Text
-            style={[
-              styles.tabText,
-              selectedTab === 'Shop' && styles.tabTextActive,
-            ]}
-          >
-            Shop
-          </Text>
-        </TouchableOpacity>
-      </View>
+      {renderShop()}
     </View>
   );
 }
@@ -520,40 +351,38 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Bottom tabs
-  tabs: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    backgroundColor: '#fff',
-    paddingVertical: 8,
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  tabText: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-  },
-  tabTextActive: {
-    color: '#007bff',
-    fontWeight: '600',
-  },
 
   // Coin display
   coinDisplay: {
     fontSize: 18,
     fontWeight: '600',
     color: '#111',
+    // Remove padding and background here, now handled in coinContainer
+  },
+
+  // Coin display row at top
+  coinContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
-    textAlign: 'center',
     backgroundColor: '#fff',
+  },
+  coinIcon: {
+    width: 28,
+    height: 28,
+    marginRight: 8,
+  },
+  // Cost badge inside shop card
+  costContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  coinSmallIcon: {
+    width: 16,
+    height: 16,
+    marginRight: 4,
+    marginTop: -10,
   },
 
   // Equip button
@@ -570,8 +399,8 @@ const styles = StyleSheet.create({
 
   equippedBadge: {
     backgroundColor: '#6c757d',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 8,
   },
   equippedText: {

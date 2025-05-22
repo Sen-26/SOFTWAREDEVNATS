@@ -125,10 +125,10 @@ export default function RootLayout() {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.dropdownItem}
-                      onPress={() => { toggleMenu(); /* optionally navigate to settings */ }}
+                      onPress={() => { toggleMenu(); router.push('/events'); }}
                     >
-                      <Ionicons name="settings-outline" size={20} color="#333" style={styles.dropdownIcon} />
-                      <Text style={styles.dropdownText}>Settings</Text>
+                      <Ionicons name="calendar-outline" size={20} color="#333" style={styles.dropdownIcon} />
+                      <Text style={styles.dropdownText}>Events</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.dropdownItem}
