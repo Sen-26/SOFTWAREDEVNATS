@@ -56,7 +56,8 @@ def get_my_profile(current_user):
         'streak': current_user.streak,
         'last_streak_date': current_user.last_streak_date,
         'latitude': current_user.latitude,
-        'longitude': current_user.longitude
+        'longitude': current_user.longitude,
+        'quests': current_user.quests
     })
 
 @users_bp.route('/<int:user_id>', methods=['GET'])
@@ -76,7 +77,8 @@ def get_user_profile(current_user, user_id):
         'streak': user.streak,
         'last_streak_date': user.last_streak_date,
         'latitude': user.latitude,
-        'longitude': user.longitude
+        'longitude': user.longitude,
+        'quests': user.quests
     })
 
 @users_bp.route('/me/avatar', methods=['POST'])
