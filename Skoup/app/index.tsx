@@ -23,7 +23,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from './_layout';
 import LitterHeatmapMapView from './heatmap';
@@ -1028,20 +1027,10 @@ export default function HomePage() {
           if (typeof data.trash_collected === 'number') {
             setTrashCollected(data.trash_collected);
           }
-        })
-        .catch(console.error);
-      // Now load claimed flags to drive homepage progress bar
-      AsyncStorage.getItem(CLAIMED_KEY)
-        .then(val => {
-          let arr: unknown;
-          try {
-            arr = JSON.parse(val || '[]');
-          } catch {
-            arr = [];
-          }
-          if (Array.isArray(arr)) {
-            // count true flags
-            setClaimedCount((arr as boolean[]).filter(Boolean).length);
+          if (Array.isArray(data.quests)) {
+            // Only count quests that are exactly 1 (completed)
+            const completed = data.quests.filter(q => q === 1).length;
+            setClaimedCount(completed);
           }
         })
         .catch(console.error);
@@ -1064,10 +1053,9 @@ export default function HomePage() {
   };
 
 
-  // Animate progress bar fill based on claimed quests
   useEffect(() => {
     // fill percent = claimed quests / total quests
-    const totalQuests = QUEST_MAX.length;
+    const totalQuests = 12;
     const pct = totalQuests > 0
       ? (claimedCount / totalQuests) * 100
       : 0;
@@ -1332,12 +1320,12 @@ export default function HomePage() {
   // MAIN MAP + UI
   return (
     <View style={styles.container}>
-     <LitterHeatmapMapView
-  region={region}
-  mapStyle={mapStyle}
-  epaMapVisible={true}
-  epaMapOpacity={1}
-/>
+      <LitterHeatmapMapView
+        region={region}
+        mapStyle={mapStyle}
+        epaMapVisible={true}
+        epaMapOpacity={1}
+      />
 
 
       {/* Top Buttons */}
