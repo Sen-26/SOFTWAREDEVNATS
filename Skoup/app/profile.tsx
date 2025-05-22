@@ -1,4 +1,4 @@
-// app/profile.tsx
+
 import { Entypo, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Buffer } from 'buffer';
@@ -33,7 +33,6 @@ export default function Profile() {
   const toggleMenu = () => setMenuVisible(v => !v);
 
 
-  // User profile state
   const { token } = useAuth();
   const [avatarUri, setAvatarUri] = useState<string>('');
   const [profileName, setProfileName] = useState<string>('');
@@ -53,7 +52,7 @@ export default function Profile() {
   function getLevelAndProgress(trashCollected: number) {
     const level = Math.floor(trashCollected / 50) + 1;
     const goal = level * 50;
-    const progress = (trashCollected % 50) / 50; // 0 to 1
+    const progress = (trashCollected % 50) / 50; 
     return { level, progress, goal };
   }
   useFocusEffect(
@@ -64,7 +63,6 @@ export default function Profile() {
         .then(res => res.json())
         .then(data => {
           const endpoint = `${API_BASE}/users/${data.id}/avatar?t=${Date.now()}`;
-          // Fetch raw image bytes and convert to base64 data URI
           fetch(endpoint, {
             headers: { Authorization: `Bearer ${token}` },
           })
@@ -75,17 +73,13 @@ export default function Profile() {
             })
             .catch(console.error);
           if (data.username) setProfileName(data.username);
-          // Update coin count
           if (typeof data.coin === 'number') {
             setCoins(data.coin);
           }
-          // Update trash collected count
           if (typeof data.trash_collected === 'number') {
             setTrashCollected(data.trash_collected);
             const total = data.trash_collected;
-            // update only the latest entry for each chart
             setDailyCounts(prev => {
-              // ensure 7-day array
               const arr = prev.length === 7 ? [...prev] : Array(7).fill(0);
               arr[arr.length - 1] = total;
               return arr;
@@ -103,7 +97,6 @@ export default function Profile() {
           }
         })
         .catch(console.error);
-      // Removed AsyncStorage history reads
     }, [token])
   );
 
@@ -133,7 +126,6 @@ export default function Profile() {
       .then(res => res.json())
       .then(async (resp: { nearby_user_ids: string[] }) => {
         let ids = resp.nearby_user_ids || [];
-        // Always include the current user
         let meId = null;
         try {
           const meRes = await fetch(`${API_BASE}/users/me`, {
@@ -148,7 +140,6 @@ export default function Profile() {
           setLoadingLeaderboard(false);
           return;
         }
-        // Fetch all user profiles in parallel
         const userProfiles = await Promise.all(
           ids.map(async id => {
             try {
@@ -156,7 +147,6 @@ export default function Profile() {
                 headers: { Authorization: `Bearer ${token}` },
               });
               const data = await res.json();
-              // Fetch avatar
               let avatarUri = '';
               try {
                 const avatarRes = await fetch(`${API_BASE}/users/${id}/avatar?t=${Date.now()}`, {
@@ -180,7 +170,6 @@ export default function Profile() {
             }
           })
         );
-        // Filter out nulls and sort by trash_collected desc
         const sorted = userProfiles.filter(Boolean).sort((a, b) => (b!.trash_collected - a!.trash_collected));
         setLeaderboard(sorted as any[]);
         setLoadingLeaderboard(false);
@@ -203,7 +192,6 @@ export default function Profile() {
 
   return (
     <View style={styles.container}>
-      {/* Hamburger Menu */}
       <TouchableOpacity
         style={styles.menuButton}
         onPress={toggleMenu}
@@ -247,7 +235,6 @@ export default function Profile() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Tabs */}
         <View style={styles.tabContainer}>
           {(['Me', 'Leaderboard'] as const).map(tab => (
             <TouchableOpacity
@@ -281,7 +268,6 @@ export default function Profile() {
               </View>
             </View>
 
-            {/* Avatar */}
             <TouchableOpacity
               style={styles.avatarWrapper}
               onPress={() => router.push('/edit-avatar')}
@@ -299,7 +285,6 @@ export default function Profile() {
               )}
             </TouchableOpacity>
 
-            {/* Level Section */}
             <View style={styles.levelSection}>
               <View style={styles.levelInfo}>
                 <Text style={styles.levelNumber}>{level}</Text>
@@ -331,7 +316,6 @@ export default function Profile() {
                 </View>
               </View>
             </View>
-            {/* Impact Dashboard */}
             <View style={styles.dashboardSection}>
               <Text style={styles.dashboardHeader}>Your Impact</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dashboardCards}>
@@ -412,7 +396,6 @@ export default function Profile() {
       },
     ]}
   >
-    {/* Banner Background (if any) */}
     {user.banner && (
       <Image
         source={{ uri: user.banner }}
@@ -423,7 +406,6 @@ export default function Profile() {
       />
     )}
 
-    {/* Dark overlay to enhance text readability */}
     {user.banner && (
       <View
         style={{
@@ -433,7 +415,6 @@ export default function Profile() {
       />
     )}
 
-    {/* Content */}
     <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
       {/* Avatar */}
       <View style={{ marginRight: 16 }}>
@@ -454,7 +435,6 @@ export default function Profile() {
         />
       </View>
 
-      {/* User Info */}
       <View style={{ flex: 1 }}>
         <Text
           style={{
@@ -476,7 +456,6 @@ export default function Profile() {
         </Text>
       </View>
 
-      {/* Rank Number */}
       <View
         style={{
           width: 32,
@@ -502,7 +481,6 @@ export default function Profile() {
         )}
       </ScrollView>
 
-      {/* Return to Map */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => router.push('/')}
@@ -622,8 +600,8 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     width: width - 125,
-    height: 28, // taller bar
-    backgroundColor: '#EEE', // default black
+    height: 28, 
+    backgroundColor: '#EEE', 
     borderRadius: 14,
     overflow: 'hidden',
     flexDirection: 'row',
@@ -715,7 +693,7 @@ const styles = StyleSheet.create({
   chartStyle: {
     marginVertical: 8,
     borderRadius: 12,
-    paddingBottom: 5,    // ensure x-axis labels are not cut off
+    paddingBottom: 5,    
   },
   chartConfig: {
     backgroundGradientFrom: '#fff',
@@ -761,6 +739,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100, // space for back button
+    paddingBottom: 100,
   },
 });

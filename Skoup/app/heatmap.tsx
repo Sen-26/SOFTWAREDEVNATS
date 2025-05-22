@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import MapView, { PROVIDER_GOOGLE, Polygon, LatLng } from 'react-native-maps';
 import { StyleSheet } from 'react-native';
 import axios from 'axios';
-// Replace this import path with your local or remote geojson file
 
 const parseGeoJSONToPolygons = (geojsonData: any): {
   id: string;
@@ -78,7 +77,6 @@ export default function LitterHeatmapMapView({
           <Polygon
             key={poly.id}
             coordinates={poly.coordinates}
-            //fillColor={getFillColor(poly.density, epaMapOpacity)}
             fillColor="rgba(255, 0, 0, 0.5)"
             strokeColor="rgba(0,0,0,0.05)"
             strokeWidth={0.5}

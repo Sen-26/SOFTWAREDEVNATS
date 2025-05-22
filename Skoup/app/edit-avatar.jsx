@@ -38,7 +38,6 @@ export default function EditAvatarScreen() {
           .then(res => res.json())
           .then(data => {
             const endpoint = `${API_BASE}/users/${data.id}/avatar?t=${Date.now()}`;
-          // Fetch raw image bytes and convert to base64 data URI
           fetch(endpoint, {
             headers: { Authorization: `Bearer ${token}` },
           })

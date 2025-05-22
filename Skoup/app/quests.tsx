@@ -1,7 +1,5 @@
 const QUEST_MAX = [5, 10, 15, 20, 25, 30, 50, 100, 150, 200, 250, 300];
 import React, { useState, useMemo } from 'react';
-// AsyncStorage key for quest progress
-// Removed AsyncStorage import and QUESTS_KEY as per instructions
 import {
   View,
   Text,
@@ -22,11 +20,10 @@ type Quest = {
   title: string;
   description: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
-  max: number;      // progress needed to complete
-  reward: number;   // coins awarded on claim
+  max: number;
+  reward: number;
 };
 
-// Define 6 daily and 6 weekly quests
 const dailyQuests: Quest[] = [
   { id: 'd1', title: 'Daily Quest 1', description: 'Pick up 5 items.', difficulty: 'Easy', max: 5, reward: 10 },
   { id: 'd2', title: 'Daily Quest 2', description: 'Pick up 10 items.', difficulty: 'Easy', max: 10, reward: 20 },
@@ -48,9 +45,7 @@ export default function QuestsPage() {
   const { token } = useAuth();
   const [coin, setCoin] = useState<number>(0);
 
-  // Track user progress and claims per quest
   const [progressMap, setProgressMap] = useState<Record<string, number>>(() => {
-    // initialize all quests to zero
     return Object.fromEntries(
       [...dailyQuests, ...weeklyQuests].map(q => [q.id, 0])
     );
@@ -77,9 +72,6 @@ export default function QuestsPage() {
         })
         .catch(console.error);
 
-      // Removed AsyncStorage progress load as per instructions
-
-      // Load claimed quest flags from server
       fetch(`${apiURL}users/me`, {
         method: 'GET',
         headers: {
@@ -96,7 +88,6 @@ export default function QuestsPage() {
             );
             setClaimedMap(updatedFlags);
           }
-          // Update quest progress based on total trash_collected
           if (typeof data.trash_collected === 'number') {
             const total = data.trash_collected;
             const newProgress = Object.fromEntries(
@@ -115,10 +106,8 @@ export default function QuestsPage() {
 
   const handleClaim = async (questId: string) => {
     try {
-      // find reward for this quest
       const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
       if (quest) {
-        // credit coins on server
         const resp = await fetch(`${apiURL}users/me/coin`, {
           method: 'POST',
           headers: {
@@ -132,10 +121,8 @@ export default function QuestsPage() {
           setCoin(json.coin);
         }
       }
-      // mark as claimed locally using a fresh map
       const newMap = { ...claimedMap, [questId]: true };
       setClaimedMap(newMap);
-      // Build flags array in quest order to send to server
       const flagsArray = [...dailyQuests, ...weeklyQuests].map(q =>
         newMap[q.id] ? 1 : 0
       );
@@ -158,7 +145,6 @@ export default function QuestsPage() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header with title & coin */}
       <View style={styles.header}>
         <Text style={styles.title}>Quests & Challenges</Text>
         <View style={styles.coinContainer}>
@@ -198,16 +184,12 @@ export default function QuestsPage() {
                 </View>
               </View>
               <Text style={styles.questDesc}>{q.description}</Text>
-              {/* Progress indicator */}
               <Text style={styles.progressText}>
                 Progress: {progressMap[q.id]} / {q.max}
               </Text>
-              {/* Reward display */}
-              {/* Claim button */}
               <TouchableOpacity
                 style={[
                   styles.claimButton,
-                  // disable if already claimed or progress not complete
                   (claimedMap[q.id] || progressMap[q.id] < q.max)
                     ? styles.claimDisabled
                     : null,
@@ -249,12 +231,9 @@ export default function QuestsPage() {
                 </View>
               </View>
               <Text style={styles.questDesc}>{q.description}</Text>
-              {/* Progress indicator */}
               <Text style={styles.progressText}>
                 Progress: {progressMap[q.id]} / {q.max}
               </Text>
-              {/* Reward display */}
-              {/* Claim button */}
               <TouchableOpacity
                 style={[
                   styles.claimButton,
@@ -317,9 +296,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
-    // full width minus list padding
     marginHorizontal: 0,
-    // soft border and shadow
     borderWidth: 1,
     borderColor: '#E2E8F0',
     elevation: 1,
@@ -393,13 +370,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  // Main header coin image
   coinIcon: {
     width: 24,
     height: 24,
     marginRight: 8,
   },
-  // Small quest reward icon
   rewardIcon: {
     width: 18,
     height: 18,

@@ -1,4 +1,4 @@
-// app/shop.tsx
+
 import React, { useState , useEffect} from 'react';
 import {
   View,
@@ -88,7 +88,7 @@ export default function ShopPage() {
   const [userCoin, setUserCoin] = useState(0);
   const [userStreak, setUserStreak] = useState(0);
   const [unlockedItems, setUnlockedItems] = useState<string[]>([]);
-  const {token} = useAuth(); // Replace with real token logic
+  const {token} = useAuth(); 
   
   useEffect(() => {
     fetchUserData();
@@ -117,7 +117,7 @@ export default function ShopPage() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      fetchUserData(); // Refresh both coin, unlocked, and equipped state
+      fetchUserData();
     } catch (err) {
       console.error('Failed to equip item', err);
       alert('Could not equip item.');
@@ -175,7 +175,7 @@ export default function ShopPage() {
           keyExtractor={item => item.id}
           numColumns={2}
           renderItem={({ item }) => {
-            const owned = unlockedItems.includes(item.name); // Fix: check by name
+            const owned = unlockedItems.includes(item.name); 
             const equipped = equippedItems.includes(item.name);
 
             return (
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   content: {
     paddingVertical: 20,
     alignItems: 'center',
-    paddingBottom: 120, // extra bottom padding for full scroll
+    paddingBottom: 120, 
   },
 
   // Cards
@@ -311,9 +311,9 @@ const styles = StyleSheet.create({
   shopCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    width: (width - 56) / 2, // slightly reduced width to avoid scroll
-    margin: 4,               // smaller side margins
-    overflow: 'hidden',      // ensures rounded corners clip the image
+    width: (width - 56) / 2, 
+    margin: 4,              
+    overflow: 'hidden',     
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
@@ -322,11 +322,11 @@ const styles = StyleSheet.create({
   },
   shopImage: {
     width: '100%',
-    aspectRatio: 1,         // makes it square
-    resizeMode: 'cover',    // fills the area
+    aspectRatio: 1,         
+    resizeMode: 'cover',   
   },
   shopContent: {
-    padding: 12,            // content under the image
+    padding: 12,           
     alignItems: 'center',
   },
   shopName: {
@@ -357,10 +357,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#111',
-    // Remove padding and background here, now handled in coinContainer
+
   },
 
-  // Coin display row at top
   coinContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -372,7 +371,7 @@ const styles = StyleSheet.create({
     height: 28,
     marginRight: 8,
   },
-  // Cost badge inside shop card
+
   costContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -385,7 +384,7 @@ const styles = StyleSheet.create({
     marginTop: -10,
   },
 
-  // Equip button
+
   equipButton: {
     backgroundColor: '#007bff',
     paddingHorizontal: 16,
@@ -414,16 +413,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
   },
-  // Wrapper for Shop tab to center items
+
   shopWrapper: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal:16,
-    paddingBottom: 40,  // extra space to scroll past last card
+    paddingBottom: 40, 
   },
 
-  // Ensure SafeAreaView and wrapper expand fully
+
   safeArea: {
     flex: 1,
   },
